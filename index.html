@@ -1,0 +1,4068 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arcobel Interactive — Adrien · 3D Artist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400..800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0E0E0E;
+    --accent: #5F47E7;
+    --accent-glow: #7B63FF;
+    --fg: #FDFEF9;
+    --muted: #888;
+    --border: rgba(253,254,249,0.08);
+    --card-bg: rgba(253,254,249,0.03);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; font-size: 16px; }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99999;
+    transform: translate(-50%, -50%);
+    transition: width 0.25s, height 0.25s, background 0.25s, opacity 0.25s;
+    mix-blend-mode: screen;
+  }
+  .cursor.hovering {
+    width: 18px; height: 18px;
+    background: var(--accent-glow);
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 32px; height: 32px;
+    border: 1px solid rgba(95,71,231,0.45);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 99998;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s, border-color 0.3s;
+  }
+  .cursor-ring.hovering {
+    width: 48px; height: 48px;
+    border-color: rgba(95,71,231,0.25);
+  }
+
+  /* ── Custom scrollbar ── */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 0;
+    transition: background 0.25s;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-glow);
+    box-shadow: 0 0 8px rgba(95,71,231,0.6);
+  }
+  * { scrollbar-width: thin; scrollbar-color: var(--accent) var(--bg); }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9990;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 1.4rem 3rem;
+    border-bottom: 1px solid transparent;
+    background: transparent;
+    transition: border-color 0.4s, background 0.4s, backdrop-filter 0.4s;
+  }
+  .nav-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  nav.scrolled {
+    background: rgba(14,14,14,0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-color: var(--border);
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: 0.04em;
+    color: var(--fg);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--accent); }
+  .nav-links {
+    display: flex;
+    gap: 2.5rem;
+    list-style: none;
+  }
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.25s;
+  }
+  .nav-links a:hover { color: var(--fg); }
+  .nav-cta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.4rem;
+    cursor: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.25s, transform 0.18s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .nav-cta::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    transition: left 0.5s ease;
+  }
+  .nav-cta:hover::before { left: 160%; }
+  .nav-cta:hover {
+    background: var(--accent-glow);
+    box-shadow: 0 0 16px rgba(95,71,231,0.45);
+    transform: translateY(-1px);
+  }
+  .nav-cta:active { transform: scale(0.97); }
+
+  /* HERO */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 7rem 3rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+  }
+
+  .hero-glow {
+    position: fixed;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(95,71,231,0.2) 0%, transparent 70%);
+    top: -180px; right: -80px;
+    pointer-events: none;
+    z-index: 1;
+    animation: float 8s ease-in-out infinite;
+  }
+  .hero-glow-2 {
+    position: fixed;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(95,71,231,0.1) 0%, transparent 70%);
+    top: -120px; left: -60px;
+    pointer-events: none;
+    z-index: 1;
+    animation: float 10s ease-in-out infinite reverse;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-30px) scale(1.05); }
+  }
+
+  .hero-tag {
+    font-size: 0.7rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(3.5rem, 8vw, 8rem);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.35s forwards;
+  }
+  .hero-title .line { display: block; }
+  .hero-title .accent { color: var(--accent); }
+
+  .hero-sub {
+    max-width: 520px;
+    font-size: 0.85rem;
+    line-height: 1.9;
+    color: rgba(253,254,249,0.55);
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.55s forwards;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.7s forwards;
+  }
+
+  .btn-primary {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.9rem 2rem;
+    cursor: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.25s, transform 0.18s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+    will-change: transform;
+  }
+  /* Shimmer sweep on hover */
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    transition: left 0.5s ease;
+  }
+  .btn-primary:hover::before { left: 160%; }
+  .btn-primary:hover {
+    background: var(--accent-glow);
+    box-shadow: 0 0 24px rgba(95,71,231,0.5), 0 0 48px rgba(95,71,231,0.2);
+    transform: translateY(-2px);
+  }
+  .btn-primary:active { transform: translateY(0) scale(0.97); box-shadow: none; }
+
+  /* Arrow that slides on hover */
+  .btn-primary .btn-arrow {
+    display: inline-block;
+    transition: transform 0.25s ease;
+  }
+  .btn-primary:hover .btn-arrow { transform: translateX(4px); }
+
+  .btn-ghost {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 0.9rem 2rem;
+    cursor: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.25s, border-color 0.25s, background 0.25s, transform 0.18s;
+    position: relative;
+    overflow: hidden;
+    will-change: transform;
+  }
+  .btn-ghost::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(95,71,231,0.06);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  .btn-ghost:hover::before { transform: scaleX(1); }
+  .btn-ghost:hover { color: var(--fg); border-color: rgba(95,71,231,0.5); transform: translateY(-2px); }
+  .btn-ghost:active { transform: scale(0.97); }
+  .btn-ghost .btn-arrow {
+    display: inline-block;
+    transition: transform 0.25s ease;
+  }
+  .btn-ghost:hover .btn-arrow { transform: translateX(4px); }
+
+  .hero-scroll {
+    position: absolute;
+    bottom: 2.5rem;
+    right: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+    writing-mode: vertical-rl;
+  }
+  .hero-scroll::before {
+    content: '';
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--muted));
+    animation: scrollLine 2s ease-in-out infinite;
+  }
+  @keyframes scrollLine {
+    0%, 100% { opacity: 0.4; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(0.6); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ABOUT */
+  section { padding: 9rem 3rem; }
+
+  .section-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+  .section-label::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--accent);
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin-bottom: 1.5rem;
+  }
+
+  #about {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+  }
+
+  .about-text p {
+    font-size: 0.88rem;
+    line-height: 2;
+    color: rgba(253,254,249,0.6);
+    margin-bottom: 1.2rem;
+  }
+  .about-text p strong { color: var(--fg); font-weight: 400; }
+
+  .about-tools {
+    margin-top: 2.5rem;
+  }
+  .tools-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+  .tools-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .tool-pill {
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    padding: 0.35rem 0.9rem;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .tool-pill:hover { color: var(--fg); border-color: rgba(95,71,231,0.5); }
+
+  /* ── STATS — 2×2 grid layout ── */
+  .about-stats-wrapper {
+    position: relative;
+  }
+  .about-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+  }
+  .stat-block {
+    background: var(--bg);
+    padding: 2rem 2rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: background 0.25s;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+  }
+  .stat-block:nth-child(2n) { border-right: none; }
+  .stat-block:nth-child(3),
+  .stat-block:nth-child(4) { border-bottom: none; }
+  .stat-block::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transform-origin: bottom;
+    transition: transform 0.35s ease;
+  }
+  .stat-block:hover::before { transform: scaleY(1); }
+  .stat-block:hover { background: rgba(95,71,231,0.04); }
+  .stat-block.active { background: rgba(95,71,231,0.06); }
+  .stat-block.active::before { transform: scaleY(1); }
+
+  /* Hide mid/right columns — not used in grid mode */
+  .stat-block-mid,
+  .stat-block-right { display: none; }
+
+  /* Stat popup panel */
+  .stat-popup {
+    position: absolute;
+    inset: 0;
+    background: #0c0c0f;
+    border: 1px solid rgba(95,71,231,0.5);
+    box-shadow: 0 0 40px rgba(95,71,231,0.15), 0 16px 48px rgba(0,0,0,0.7);
+    z-index: 20;
+    opacity: 0;
+    transform: scale(0.985);
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.4,0,0.2,1),
+                transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+  }
+  .stat-popup.visible {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: auto;
+  }
+  .stat-popup-header {
+    padding: 0.9rem 1.2rem 0.7rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .stat-popup-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.2rem;
+  }
+  .stat-popup-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--fg);
+  }
+  .stat-popup-title span { color: var(--accent); font-size: 1rem; }
+  .stat-popup-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.7rem;
+    width: 1.6rem; height: 1.6rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+  }
+  .stat-popup-close:hover { color: var(--fg); border-color: rgba(95,71,231,0.5); background: rgba(95,71,231,0.08); }
+  .stat-popup-diagram {
+    padding: 1rem 1.2rem 0.6rem;
+    border-bottom: 1px solid var(--border);
+    background: rgba(95,71,231,0.02);
+  }
+  .stat-popup-diagram svg { width: 100%; height: auto; max-height: 90px; display: block; }
+  .stat-popup-desc {
+    padding: 0.8rem 1.2rem 1.1rem;
+    font-size: 0.72rem;
+    line-height: 1.8;
+    color: rgba(253,254,249,0.5);
+  }
+  .stat-popup-desc strong { color: rgba(253,254,249,0.85); font-weight: 400; }
+
+  /* Service popup — desktop hidden */
+  @media (min-width: 769px) {
+    .service-popup-overlay { display: none !important; }
+  }
+
+  /* Remove old modal */
+  .stat-modal-overlay { display: none !important; }
+
+  /* SVG diagram animations */
+  .diag-line {
+    stroke-dasharray: 200;
+    stroke-dashoffset: 200;
+    animation: drawLine 0.8s ease forwards;
+  }
+  .diag-line-d2 { animation-delay: 0.15s; }
+  .diag-line-d3 { animation-delay: 0.3s; }
+  .diag-line-d4 { animation-delay: 0.45s; }
+  .diag-line-d5 { animation-delay: 0.6s; }
+  @keyframes drawLine {
+    to { stroke-dashoffset: 0; }
+  }
+  .diag-fade {
+    opacity: 0;
+    animation: diagFadeIn 0.5s ease forwards;
+  }
+  .diag-fade-d1 { animation-delay: 0.2s; }
+  .diag-fade-d2 { animation-delay: 0.4s; }
+  .diag-fade-d3 { animation-delay: 0.6s; }
+  .diag-fade-d4 { animation-delay: 0.8s; }
+  @keyframes diagFadeIn {
+    to { opacity: 1; }
+  }
+  .diag-pulse {
+    animation: diagPulse 2s ease-in-out infinite;
+  }
+  @keyframes diagPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+  .stat-number {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2.8rem;
+    color: var(--fg);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.08em;
+    font-feature-settings: "tnum" 1, "kern" 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-number span {
+    color: var(--accent);
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  /* Force Syne numerals to cap-height everywhere */
+  .hero-title, .section-title, .stat-number, .footer-logo, .nav-logo, .step-name, .service-name, .work-title, .stat-number {
+    font-feature-settings: "case" 1, "cpsp" 1, "tnum" 1;
+    font-variant-numeric: lining-nums tabular-nums;
+  }
+  .stat-desc {
+    font-size: 0.72rem;
+    line-height: 1.6;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* SERVICES */
+  #services { background: rgba(95,71,231,0.03); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+
+  .services-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 4rem;
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .service-card {
+    background: var(--bg);
+    padding: 3rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+    cursor: none;
+  }
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+  .service-card:hover { background: rgba(95,71,231,0.06); }
+  .service-card:hover::before { transform: scaleX(1); }
+
+  .service-number {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    opacity: 0.7;
+  }
+
+  .service-icon {
+    width: 40px; height: 40px;
+    margin-bottom: 1.8rem;
+    opacity: 0.8;
+  }
+
+  .service-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+  }
+
+  .service-desc {
+    font-size: 0.78rem;
+    line-height: 1.9;
+    color: rgba(253,254,249,0.5);
+    margin-bottom: 2rem;
+  }
+
+  .service-includes {
+    list-style: none;
+    margin-bottom: 2.5rem;
+  }
+  .service-includes li {
+    font-size: 0.72rem;
+    color: rgba(253,254,249,0.45);
+    padding: 0.4rem 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    letter-spacing: 0.02em;
+  }
+  .service-includes li::before {
+    content: '→';
+    color: var(--accent);
+    font-size: 0.65rem;
+    flex-shrink: 0;
+  }
+
+  .service-cta {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: gap 0.25s;
+  }
+  .service-cta:hover { gap: 0.9rem; }
+
+  .service-premium {
+    position: absolute;
+    top: 1.5rem; right: 1.5rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid rgba(95,71,231,0.4);
+    padding: 0.25rem 0.6rem;
+  }
+
+  /* WORKS */
+  #works .works-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 3rem;
+  }
+
+  .works-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    grid-template-rows: auto;
+    gap: 1.5px;
+    background: var(--bg);
+    border: 1px solid var(--bg);
+  }
+
+  .work-card {
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+    cursor: none;
+    aspect-ratio: 4/3;
+  }
+  .work-card:nth-child(1) { grid-column: span 8; aspect-ratio: 16/9; }
+  .work-card:nth-child(2) { grid-column: span 4; }
+  .work-card:nth-child(3) { grid-column: span 4; }
+  .work-card:nth-child(4) { grid-column: span 8; aspect-ratio: 16/9; }
+  .work-card:nth-child(5) { grid-column: span 6; }
+  .work-card:nth-child(6) { grid-column: span 6; }
+
+  .work-placeholder {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, rgba(95,71,231,0.08) 0%, rgba(14,14,14,0) 100%);
+    transition: background 0.4s;
+  }
+  .work-card:hover .work-placeholder { background: linear-gradient(135deg, rgba(95,71,231,0.15) 0%, rgba(14,14,14,0) 100%); }
+
+  .work-placeholder-icon {
+    font-size: 1.5rem;
+    opacity: 0.2;
+  }
+  .work-placeholder-text {
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(253,254,249,0.15);
+  }
+
+  .work-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to top, rgba(14,14,14,0.95) 0%, transparent 60%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.8rem;
+    transform: translateY(40%);
+    transition: transform 0.4s ease;
+  }
+  .work-card:hover .work-overlay { transform: translateY(0); }
+
+  .work-cat {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.4rem;
+  }
+  .work-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+  .work-engine {
+    font-size: 0.65rem;
+    color: rgba(253,254,249,0.4);
+    letter-spacing: 0.06em;
+  }
+
+  /* PROCESS */
+  #process {
+    border-top: 1px solid var(--border);
+    padding-bottom: 7rem;
+  }
+
+  .process-steps {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    margin-top: 4rem;
+    position: relative;
+  }
+  .process-steps::before {
+    content: '';
+    position: absolute;
+    top: 3.6rem;
+    left: 10%;
+    right: 10%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), var(--border), transparent);
+  }
+
+  .process-step {
+    padding: 2rem 1.5rem 2.5rem;
+    text-align: center;
+    position: relative;
+    border: 1px solid transparent;
+    transition: border-color 0.35s, background 0.35s;
+    overflow: hidden;
+  }
+
+  /* Spotlight glow layer */
+  .process-step::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 70% at 50% 30%, rgba(95,71,231,0.18) 0%, transparent 75%);
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+  }
+
+  /* When the steps container has a hovered child, dim all steps */
+  .process-steps:has(.process-step:hover) .process-step {
+    opacity: 0.35;
+    filter: brightness(0.6);
+  }
+  /* Then re-illuminate the hovered one */
+  .process-steps:has(.process-step:hover) .process-step:hover {
+    opacity: 1;
+    filter: brightness(1);
+    border-color: rgba(95,71,231,0.4);
+    background: rgba(95,71,231,0.06);
+  }
+  .process-step:hover::after {
+    opacity: 1;
+  }
+
+  /* Transition on all steps for smooth dim */
+  .process-step {
+    transition: opacity 0.15s ease, filter 0.15s ease, border-color 0.15s, background 0.15s;
+  }
+
+  .step-num {
+    width: 3.2rem; height: 3.2rem;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: var(--bg);
+    position: relative;
+    z-index: 1;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  }
+  .process-step:hover .step-num {
+    border-color: var(--accent);
+    background: rgba(95,71,231,0.15);
+    box-shadow: 0 0 16px rgba(95,71,231,0.4), inset 0 0 8px rgba(95,71,231,0.1);
+  }
+  .step-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 0.6rem;
+    transition: color 0.15s;
+    position: relative;
+    z-index: 1;
+  }
+  .process-step:hover .step-name {
+    color: var(--fg);
+  }
+  .step-desc {
+    font-size: 0.7rem;
+    line-height: 1.8;
+    color: var(--muted);
+    transition: color 0.15s;
+    position: relative;
+    z-index: 1;
+  }
+  .process-step:hover .step-desc {
+    color: rgba(253,254,249,0.75);
+  }
+
+  /* CONTACT */
+  #contact {
+    border-top: 1px solid var(--border);
+    background: rgba(95,71,231,0.03);
+  }
+
+  .contact-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: start;
+  }
+
+  .contact-info p {
+    font-size: 0.85rem;
+    line-height: 2;
+    color: rgba(253,254,249,0.55);
+    margin-bottom: 2rem;
+    max-width: 400px;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 2rem;
+  }
+  .contact-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: rgba(253,254,249,0.5);
+    text-decoration: none;
+    transition: color 0.25s;
+    padding: 0.7rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .contact-link:hover { color: var(--fg); }
+  .contact-link-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    min-width: 80px;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+  }
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  .form-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .form-input, .form-textarea {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.82rem;
+    padding: 0.85rem 1rem;
+    outline: none;
+    transition: border-color 0.25s, background 0.25s;
+    resize: none;
+  }
+  .form-input::placeholder, .form-textarea::placeholder { color: rgba(253,254,249,0.2); }
+  .form-input:focus, .form-textarea:focus {
+    border-color: rgba(95,71,231,0.6);
+    background: rgba(95,71,231,0.04);
+  }
+  .form-textarea { min-height: 140px; }
+
+  .form-submit {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 1rem 2.5rem;
+    cursor: none;
+    align-self: flex-start;
+    transition: background 0.25s, transform 0.18s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .form-submit::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    transition: left 0.5s ease;
+  }
+  .form-submit:hover::before { left: 160%; }
+  .form-submit:hover {
+    background: var(--accent-glow);
+    box-shadow: 0 0 24px rgba(95,71,231,0.5);
+    transform: translateY(-2px);
+  }
+  .form-submit:active { transform: scale(0.97); box-shadow: none; }
+  .form-submit:disabled { opacity: 0.7; transform: none; cursor: not-allowed; }
+
+  .calendly-note {
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-top: 1rem;
+  }
+  .calendly-note a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+  .calendly-note a:hover { text-decoration: underline; }
+
+  /* FOOTER */
+  footer {
+    padding: 2.5rem 3rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--fg);
+    letter-spacing: 0.04em;
+  }
+  .footer-logo span { color: var(--accent); }
+  .footer-copy {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+  }
+  .footer-links {
+    display: none; /* replaced by CGV/CGU */
+  }
+  .footer-legal {
+    display: flex;
+    align-items: center;
+    gap: 1.8rem;
+    list-style: none;
+  }
+  .footer-legal a {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .footer-legal a:hover { color: var(--fg); }
+  .footer-legal a:hover .footer-legal-abbr { color: var(--accent-glow); box-shadow: 0 0 12px rgba(95,71,231,0.35); }
+  .footer-legal-abbr {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    border: 1px solid rgba(95,71,231,0.35);
+    padding: 0.15rem 0.5rem;
+    transition: color 0.2s, box-shadow 0.2s;
+  }
+  .footer-legal-full { display: none; }
+  .footer-legal-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+  }
+
+  /* ── CGV / CGU MODAL ── */
+  .legal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    background: rgba(0,0,0,0.88);
+    backdrop-filter: blur(18px);
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+  .legal-overlay.active { display: flex; }
+
+  .legal-modal {
+    background: #111;
+    border: 1px solid var(--border);
+    max-width: 720px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    animation: lightboxIn 0.28s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+
+  .legal-modal-header {
+    padding: 2rem 2.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .legal-modal-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+  }
+
+  .legal-modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: var(--fg);
+    line-height: 1.1;
+  }
+
+  .legal-modal-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: none;
+    flex-shrink: 0;
+    transition: color 0.2s, border-color 0.2s;
+  }
+  .legal-modal-close:hover { color: var(--fg); border-color: rgba(95,71,231,0.5); }
+
+  .legal-modal-body {
+    padding: 2rem 2.5rem;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent) var(--bg);
+  }
+
+  .legal-modal-body h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--fg);
+    margin: 1.8rem 0 0.7rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .legal-modal-body h3:first-child { margin-top: 0; }
+
+  .legal-modal-body p {
+    font-size: 0.78rem;
+    line-height: 1.9;
+    color: rgba(253,254,249,0.55);
+    margin-bottom: 0.8rem;
+  }
+
+  .legal-modal-body .legal-placeholder {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px dashed rgba(95,71,231,0.4);
+    padding: 0.6rem 1rem;
+    margin: 0.5rem 0 1rem;
+    background: rgba(95,71,231,0.04);
+  }
+
+  .legal-modal-footer {
+    padding: 1.2rem 2.5rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .legal-modal-footer-note {
+    font-size: 0.62rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .legal-modal-footer-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    padding: 0.6rem 1.4rem;
+    cursor: none;
+    transition: background 0.2s;
+  }
+  .legal-modal-footer-btn:hover { background: var(--accent-glow); }
+
+  /* Footer legal links */
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+
+  /* ── Ripple ── */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    transform: scale(0);
+    animation: rippleAnim 0.6s cubic-bezier(0.4,0,0.2,1) forwards;
+    pointer-events: none;
+    z-index: 10;
+  }
+  @keyframes rippleAnim {
+    to { transform: scale(4.5); opacity: 0; }
+  }
+
+  /* ── Scroll progress bar at top ── */
+  #scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+    width: 0%;
+    z-index: 200;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 8px rgba(95,71,231,0.6);
+  }
+
+  /* ── Section flash on scroll-to ── */
+  @keyframes sectionFlash {
+    0%   { outline: 0px solid transparent; }
+    20%  { outline: 1px solid rgba(95,71,231,0.4); }
+    100% { outline: 0px solid transparent; }
+  }
+  .section-flash { animation: sectionFlash 0.8s ease forwards; }
+
+  /* ── Scroll-to indicator: animated dots on nav links ── */
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.25s;
+    position: relative;
+    padding-bottom: 2px;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0;
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .nav-links a:hover { color: var(--fg); }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-links a.active { color: var(--fg); }
+  .nav-links a.active::after { width: 100%; }
+
+  /* ── Button pulse ring (after click) ── */
+  @keyframes pulseRing {
+    0%   { box-shadow: 0 0 0 0 rgba(95,71,231,0.5); }
+    70%  { box-shadow: 0 0 0 10px rgba(95,71,231,0); }
+    100% { box-shadow: 0 0 0 0 rgba(95,71,231,0); }
+  }
+  .btn-pulse { animation: pulseRing 0.6s ease forwards; }
+
+  /* ── Magnetic hover warp on service CTAs ── */
+  .service-cta {
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: gap 0.3s ease, color 0.2s, transform 0.2s;
+    position: relative;
+  }
+  .service-cta::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0;
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+  .service-cta:hover { gap: 1rem; transform: translateX(4px); }
+  .service-cta:hover::after { width: 100%; }
+
+  /* ── LIGHTBOX ── */
+  .lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 11000;
+    background: rgba(0,0,0,0.92);
+    backdrop-filter: blur(16px);
+    align-items: center;
+    justify-content: center;
+    cursor: none;
+  }
+  .lightbox.active { display: flex; }
+
+  .lightbox-inner {
+    position: relative;
+    max-width: 90vw;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    animation: lightboxIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+  @keyframes lightboxIn {
+    from { opacity: 0; transform: scale(0.93); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+
+  .lightbox-img {
+    max-width: 90vw;
+    max-height: 78vh;
+    object-fit: contain;
+    display: block;
+    border: 1px solid rgba(95,71,231,0.2);
+    box-shadow: 0 0 80px rgba(0,0,0,0.8), 0 0 40px rgba(95,71,231,0.1);
+  }
+
+  .lightbox-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+  }
+  .lightbox-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--fg);
+  }
+  .lightbox-sub {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .lightbox-close {
+    position: fixed;
+    top: 1.5rem; right: 1.8rem;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.6);
+    font-size: 1rem;
+    width: 2.4rem; height: 2.4rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: none;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    z-index: 11001;
+  }
+  .lightbox-close:hover { color: #fff; border-color: var(--accent); background: rgba(95,71,231,0.15); }
+
+  .lightbox-nav {
+    position: fixed;
+    top: 50%; transform: translateY(-50%);
+    background: rgba(14,14,14,0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.5);
+    font-size: 1.1rem;
+    width: 3rem; height: 3rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: none;
+    transition: all 0.2s;
+    z-index: 11001;
+  }
+  .lightbox-nav:hover { color: #fff; border-color: var(--accent); background: rgba(95,71,231,0.2); }
+  .lightbox-nav.prev { left: 1.5rem; }
+  .lightbox-nav.next { right: 1.5rem; }
+  .lightbox-nav:disabled { opacity: 0.2; pointer-events: none; }
+
+  .lightbox-counter {
+    position: fixed;
+    bottom: 1.8rem; left: 50%; transform: translateX(-50%);
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+  }
+
+  /* ── Dynamic bg accent ── */
+  .bg-accent-blob {
+    position: fixed;
+    bottom: -200px; left: -200px;
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(95,71,231,0.07) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+    transition: background 1.4s ease;
+  }
+
+  /* ── ADMIN SYSTEM ── */
+
+  /* Password modal */
+  .admin-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(12px);
+    z-index: 10000;
+    align-items: center;
+    justify-content: center;
+  }
+  .admin-overlay.active { display: flex; }
+
+  .admin-modal {
+    background: #111;
+    border: 1px solid rgba(95,71,231,0.3);
+    padding: 3rem;
+    width: 100%;
+    max-width: 420px;
+    position: relative;
+    box-shadow: 0 0 60px rgba(95,71,231,0.2);
+  }
+  .admin-modal-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 0.4rem;
+  }
+  .admin-modal-sub {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    margin-bottom: 2rem;
+  }
+  .admin-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.9rem 1.2rem;
+    letter-spacing: 0.1em;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 1rem;
+  }
+  .admin-input:focus { border-color: var(--accent); }
+  .admin-input.error { border-color: #e74747; animation: shake 0.3s ease; }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)}
+  }
+  .admin-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.9rem;
+    cursor: none;
+    transition: background 0.2s;
+  }
+  .admin-btn:hover { background: var(--accent-glow); }
+  .admin-close {
+    position: absolute;
+    top: 1.2rem; right: 1.4rem;
+    background: none; border: none;
+    color: var(--muted);
+    font-size: 1.2rem;
+    cursor: none;
+    line-height: 1;
+    transition: color 0.2s;
+  }
+  .admin-close:hover { color: var(--fg); }
+  .admin-error-msg {
+    font-size: 0.65rem;
+    color: #e74747;
+    letter-spacing: 0.08em;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
+    display: none;
+  }
+  .admin-error-msg.visible { display: block; }
+
+  /* Admin Panel (side drawer) */
+  .admin-panel {
+    position: fixed;
+    top: 0; right: -520px;
+    width: 500px;
+    height: 100vh;
+    background: #0f0f0f;
+    border-left: 1px solid rgba(95,71,231,0.25);
+    z-index: 9000;
+    overflow-y: auto;
+    transition: right 0.4s cubic-bezier(0.4,0,0.2,1);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    box-shadow: -20px 0 60px rgba(0,0,0,0.5);
+  }
+  .admin-panel.open { right: 0; }
+  .admin-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .admin-panel-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .admin-panel-title span {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--accent);
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+  }
+
+  /* Add project form */
+  .admin-form-section {
+    border: 1px solid var(--border);
+    padding: 1.5rem;
+    background: rgba(95,71,231,0.02);
+  }
+  .admin-form-section-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .admin-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+  }
+  .admin-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.8rem;
+  }
+  .admin-field label {
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  /* Global cursor override — aucun élément ne doit afficher le curseur natif */
+  *, *::before, *::after { cursor: none !important; }
+
+  .admin-field input, .admin-field select {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    color: var(--fg);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.65rem 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .admin-field input:focus, .admin-field select:focus { border-color: var(--accent); }
+  .admin-field select option { background: #111; }
+
+  /* Image upload zone */
+  .upload-zone {
+    border: 1px dashed rgba(95,71,231,0.35);
+    padding: 2rem;
+    text-align: center;
+    cursor: none;
+    transition: border-color 0.25s, background 0.25s;
+    margin-bottom: 0.8rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(95,71,231,0.05);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .upload-zone-icon { font-size: 1.8rem; opacity: 0.3; margin-bottom: 0.5rem; }
+  .upload-zone-text {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .upload-preview {
+    width: 100%;
+    height: 140px;
+    object-fit: cover;
+    display: none;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border);
+  }
+  .upload-preview.visible { display: block; }
+  .upload-preview-name {
+    font-size: 0.62rem;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+    display: none;
+  }
+  .upload-preview-name.visible { display: block; }
+
+  .admin-submit-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.85rem;
+    cursor: none;
+    transition: background 0.2s, transform 0.15s;
+    margin-top: 0.4rem;
+  }
+  .admin-submit-btn:hover { background: var(--accent-glow); transform: translateY(-1px); }
+
+  /* Projects list */
+  .admin-projects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .admin-project-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.9rem;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    transition: border-color 0.2s;
+  }
+  .admin-project-item:hover { border-color: rgba(95,71,231,0.3); }
+  .admin-project-thumb {
+    width: 56px;
+    height: 42px;
+    object-fit: cover;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    background: rgba(95,71,231,0.08);
+  }
+  .admin-project-info { flex: 1; min-width: 0; }
+  .admin-project-info strong {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .admin-project-info small {
+    font-size: 0.62rem;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+  .admin-project-delete {
+    background: none;
+    border: 1px solid rgba(231,71,71,0.3);
+    color: rgba(231,71,71,0.7);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.7rem;
+    cursor: none;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+  }
+  .admin-project-delete:hover { background: rgba(231,71,71,0.1); color: #e74747; border-color: #e74747; }
+
+  /* Admin logout */
+  .admin-logout-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    cursor: none;
+    transition: all 0.2s;
+  }
+  .admin-logout-btn:hover { border-color: var(--accent); color: var(--fg); }
+
+  /* Admin trigger badge (visible when logged in) */
+  .admin-trigger-badge {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 0.55rem 1rem;
+    cursor: pointer;
+    z-index: 8000;
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.2s, transform 0.2s;
+    box-shadow: 0 4px 20px rgba(95,71,231,0.4);
+  }
+  .admin-trigger-badge.visible { display: flex; }
+  .admin-trigger-badge:hover { background: var(--accent-glow); transform: translateY(-2px); }
+
+  /* Works grid image */
+  .work-card img.work-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.5s ease;
+  }
+  .work-card:hover img.work-img { transform: scale(1.03); }
+
+  /* Empty state */
+  .works-empty-state {
+    grid-column: 1 / -1;
+    padding: 5rem 2rem;
+    text-align: center;
+    border: 1px dashed rgba(95,71,231,0.2);
+    background: rgba(95,71,231,0.02);
+  }
+  .works-empty-icon { font-size: 2.5rem; opacity: 0.15; margin-bottom: 1rem; }
+  .works-empty-text {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* Panel backdrop */
+  .admin-panel-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 8999;
+    backdrop-filter: blur(4px);
+  }
+  .admin-panel-backdrop.active { display: block; }
+
+  /* ── LANGUAGE SWITCHER ── */
+  .lang-switcher {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.7rem;
+    cursor: none;
+    transition: border-color 0.25s;
+    margin-right: 1rem;
+  }
+  .lang-switcher:hover { border-color: rgba(95,71,231,0.5); }
+  .lang-opt {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+  .lang-opt.active { color: var(--accent); }
+  .lang-sep { font-size: 0.55rem; color: var(--border); }
+
+  /* ── PROJECT DETAIL SPLIT SCREEN ── */
+  .project-detail {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 12000;
+    background: var(--bg);
+    animation: slideInRight 0.4s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+  .project-detail.active { display: flex; }
+  @keyframes slideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  .project-detail-left {
+    width: 55%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    border-right: 1px solid var(--border);
+    background: #080808;
+  }
+  .project-detail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.6s ease;
+  }
+  .project-detail-left:hover .project-detail-img { transform: scale(1.02); }
+  .project-detail-img-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 0.8rem;
+    background: linear-gradient(135deg, rgba(95,71,231,0.08) 0%, transparent 100%);
+    color: rgba(253,254,249,0.12);
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+  .project-detail-img-placeholder span:first-child { font-size: 3rem; opacity: 0.15; }
+
+  .project-detail-right {
+    width: 45%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 4rem 3.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+  }
+  .project-detail-close {
+    position: absolute;
+    top: 1.5rem; right: 1.8rem;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.9rem;
+    width: 2.2rem; height: 2.2rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: none;
+    transition: all 0.2s;
+    z-index: 1;
+  }
+  .project-detail-close:hover { border-color: var(--accent); color: var(--fg); background: rgba(95,71,231,0.1); }
+  .project-detail-back {
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 2.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: none;
+    background: none;
+    border: none;
+    padding: 0;
+    transition: gap 0.2s;
+  }
+  .project-detail-back:hover { gap: 0.9rem; }
+  .project-detail-cat {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+  }
+  .project-detail-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    line-height: 1.05;
+    margin-bottom: 0.6rem;
+  }
+  .project-detail-engine {
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .project-detail-section-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+    margin-top: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .project-detail-section-label::before {
+    content: '';
+    width: 16px; height: 1px;
+    background: var(--accent);
+  }
+  .project-detail-desc {
+    font-size: 0.82rem;
+    line-height: 2;
+    color: rgba(253,254,249,0.6);
+    margin-bottom: 0.5rem;
+  }
+  .project-detail-specs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+  .project-detail-spec {
+    background: var(--bg);
+    padding: 1rem 1.2rem;
+  }
+  .project-detail-spec-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+  }
+  .project-detail-spec-val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--fg);
+  }
+  .project-detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .project-detail-tag {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.75rem;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .project-detail-artstation {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2.5rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid rgba(95,71,231,0.3);
+    padding: 0.75rem 1.5rem;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .project-detail-artstation:hover {
+    background: rgba(95,71,231,0.1);
+    border-color: var(--accent);
+    gap: 0.9rem;
+  }
+
+  /* ── MOBILE RESPONSIVE ── */
+  @media (max-width: 768px) {
+    /* Cursor — disabled on mobile */
+    .cursor, .cursor-ring { display: none !important; }
+    body { cursor: auto; }
+    *, *::before, *::after { cursor: auto !important; }
+
+    /* Nav */
+    nav {
+      padding: 0.9rem 1.2rem;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 0;
+    }
+    .nav-links { display: none; }
+    .nav-logo { grid-column: 1; }
+    .nav-right {
+      grid-column: 3;
+      justify-content: flex-end;
+      gap: 0.7rem;
+    }
+    .lang-switcher {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.62rem;
+    }
+    .nav-cta { font-size: 0.62rem; padding: 0.5rem 0.85rem; letter-spacing: 0.1em; }
+
+    /* Hero */
+    #hero {
+      min-height: 100vh;
+      padding: 5rem 1.4rem 3rem;
+      overflow: visible;
+    }
+    .hero-title {
+      font-size: clamp(2.8rem, 13.5vw, 5.5rem);
+      line-height: 0.97;
+      margin-bottom: 1.4rem;
+      word-break: keep-all;
+    }
+    .hero-sub { font-size: 0.78rem; line-height: 1.7; margin-bottom: 2rem; }
+    .hero-actions { flex-direction: column; align-items: stretch; gap: 0.7rem; }
+    .btn-primary, .btn-ghost { width: 100%; justify-content: center; padding: 1rem; }
+    .hero-scroll { display: none; }
+
+    /* Sections */
+    section { padding: 5rem 1.4rem; }
+
+    /* About */
+    #about { grid-template-columns: 1fr; gap: 3rem; }
+    .about-stats { grid-template-columns: 1fr 1fr; }
+    .stat-block { padding: 1.2rem 1rem; }
+    .stat-number { font-size: clamp(1.6rem, 6vw, 2.4rem); }
+    .stat-block-right { display: none; }
+
+    /* Services */
+    .services-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
+    .services-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5px;
+    }
+    .service-card {
+      padding: 1.4rem 1rem 1.6rem;
+      cursor: pointer;
+    }
+    .service-card.mobile-active { background: rgba(95,71,231,0.07); }
+    .service-card.mobile-active::before { transform: scaleX(1); }
+    .service-number { margin-bottom: 0.8rem; font-size: 0.58rem; }
+    .service-icon { width: 28px; height: 28px; margin-bottom: 0.8rem; }
+    .service-name { font-size: 0.85rem; margin-bottom: 0; }
+    /* hide details by default on mobile */
+    .service-desc,
+    .service-includes,
+    .service-cta { display: none; }
+    .service-card.mobile-active .service-desc,
+    .service-card.mobile-active .service-includes,
+    .service-card.mobile-active .service-cta { display: block; }
+    .service-card.mobile-active .service-desc { font-size: 0.7rem; line-height: 1.7; margin-top: 0.8rem; margin-bottom: 0.8rem; }
+    .service-card.mobile-active .service-includes { margin-bottom: 1rem; }
+    .service-card.mobile-active .service-includes li { font-size: 0.65rem; }
+    .service-card.mobile-active .service-cta { font-size: 0.65rem; margin-top: 0.5rem; }
+    .service-premium { top: 0.8rem; right: 0.8rem; font-size: 0.5rem; }
+    /* popup overlay for services on mobile */
+    .service-popup-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(4px);
+      align-items: center;
+      justify-content: center;
+      padding: 1.4rem;
+    }
+    .service-popup-overlay.visible { display: flex; }
+    .service-popup-sheet {
+      width: 100%;
+      max-width: 420px;
+      background: #0c0c0f;
+      border: 1px solid rgba(95,71,231,0.45);
+      padding: 1.4rem 1.4rem 2rem;
+      animation: sheetIn 0.25s cubic-bezier(0.4,0,0.2,1) forwards;
+    }
+    @keyframes sheetIn {
+      from { opacity: 0; transform: scale(0.96) translateY(10px); }
+      to   { opacity: 1; transform: scale(1)    translateY(0); }
+    }
+    .service-popup-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .service-popup-num { font-size: 0.55rem; letter-spacing: 0.2em; color: var(--accent); margin-bottom: 0.3rem; }
+    .service-popup-name { font-family: 'Syne',sans-serif; font-weight: 700; font-size: 1.2rem; line-height: 1.15; font-feature-settings: "case" 1, "tnum" 1; font-variant-numeric: lining-nums; vertical-align: baseline; }
+    .service-popup-name * { vertical-align: baseline; }
+    .service-popup-close {
+      background: none; border: 1px solid var(--border);
+      color: var(--muted); font-size: 0.7rem;
+      width: 1.8rem; height: 1.8rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+    }
+    .service-popup-desc { font-size: 0.75rem; line-height: 1.75; color: rgba(253,254,249,0.55); margin-bottom: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+    .service-popup-list { list-style: none; margin-bottom: 1.2rem; }
+    .service-popup-list li { font-size: 0.7rem; color: rgba(253,254,249,0.45); padding: 0.4rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem; }
+    .service-popup-list li::before { content: '→'; color: var(--accent); font-size: 0.65rem; }
+    .service-popup-cta { font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+
+    /* Works */
+    .works-header { flex-direction: column; align-items: flex-start; gap: 1.2rem; }
+    .works-header > div { align-self: flex-start; text-align: left; width: 100%; }
+    .works-grid { grid-template-columns: 1fr !important; }
+    .work-card { grid-column: span 1 !important; aspect-ratio: 16/9 !important; }
+    .work-overlay { transform: translateY(0) !important; background: linear-gradient(to top, rgba(14,14,14,0.98) 0%, transparent 80%); }
+
+    /* Process — timeline vertical */
+    .process-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 2.5rem;
+      position: relative;
+    }
+    .process-steps::before { display: none; }
+    .process-step {
+      display: grid;
+      grid-template-columns: 3rem 1fr;
+      grid-template-rows: auto auto;
+      column-gap: 1.2rem;
+      padding: 0 0 2.2rem 0;
+      text-align: left;
+      position: relative;
+      border: none;
+      background: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
+    .process-step:last-child { padding-bottom: 0; }
+    /* vertical line between circles */
+    .process-step:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      left: 1.45rem;
+      top: 3.2rem;
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+    .step-num {
+      grid-column: 1;
+      grid-row: 1 / 3;
+      width: 2.8rem; height: 2.8rem;
+      margin: 0;
+      align-self: start;
+    }
+    .step-name {
+      grid-column: 2;
+      grid-row: 1;
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+      align-self: center;
+    }
+    .step-desc {
+      grid-column: 2;
+      grid-row: 2;
+      font-size: 0.72rem;
+      line-height: 1.65;
+    }
+    .process-step::after { display: none; }
+    .process-steps:has(.process-step:hover) .process-step { opacity: 1 !important; filter: none !important; }
+
+    /* Contact */
+    .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
+    .form-row { grid-template-columns: 1fr; }
+
+    /* Footer */
+    footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.4rem; }
+    .footer-links { flex-wrap: wrap; justify-content: center; gap: 1rem; }
+    .footer-legal { flex-direction: row; gap: 1.2rem; align-items: center; justify-content: center; }
+    .footer-legal-sep { display: none; }
+    .form-submit { display: block; margin: 0 auto; }
+    .calendly-note { text-align: center; }
+
+    /* Project detail split → stacked on mobile */
+    .project-detail { flex-direction: column; overflow-y: auto; }
+    .project-detail-left { width: 100%; height: 45vw; min-height: 220px; border-right: none; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+    .project-detail-right { width: 100%; height: auto; padding: 2rem 1.4rem 4rem; overflow-y: visible; }
+
+    /* Admin panel */
+    .admin-panel { width: 100%; right: -100%; }
+
+    /* Lightbox nav */
+    .lightbox-nav.prev { left: 0.4rem; }
+    .lightbox-nav.next { right: 0.4rem; }
+
+    /* Magnetic effects — disable on mobile */
+    .btn-primary, .btn-ghost, .nav-cta { will-change: auto; }
+
+    /* Stat modal */
+    .stat-modal { width: 95vw; padding: 1.5rem; }
+    .stat-modal-diagram svg { max-width: 100%; }
+  }
+
+  @media (max-width: 480px) {
+    .hero-title { font-size: clamp(2rem, 10vw, 3rem); line-height: 1.02; }
+    .section-title { font-size: clamp(1.6rem, 8vw, 2.4rem); }
+    .stat-number { font-size: 2.2rem; }
+    nav { padding: 0.8rem 1rem; }
+    .nav-logo { font-size: 0.95rem; }
+    .nav-cta { font-size: 0.58rem; padding: 0.45rem 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STAT MODAL -->
+<div class="stat-modal-overlay" id="statModalOverlay">
+  <div class="stat-modal" id="statModal">
+    <div class="stat-modal-header">
+      <div>
+        <div class="stat-modal-label" id="statModalLabel"></div>
+        <div class="stat-modal-title" id="statModalTitle"></div>
+      </div>
+      <button class="stat-modal-close" id="statModalClose">✕</button>
+    </div>
+    <div class="stat-modal-diagram" id="statModalDiagram"></div>
+    <div class="stat-modal-body">
+      <div class="stat-modal-desc" id="statModalDesc"></div>
+    </div>
+  </div>
+</div>
+
+<div id="scroll-progress"></div>
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+<div class="bg-accent-blob" id="bgBlob"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <a href="#" class="nav-logo">Arcobel<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#works">Works</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="lang-switcher" id="langSwitcher">
+      <span class="lang-opt active" data-lang="fr">FR</span>
+      <span class="lang-sep">/</span>
+      <span class="lang-opt" data-lang="en">EN</span>
+    </button>
+    <a href="#contact" class="nav-cta">Start a project</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-glow-2"></div>
+
+  <div class="hero-tag">Prop & Environment Artist · Freelance</div>
+  <h1 class="hero-title">
+    <span class="line">3D Assets</span>
+    <span class="line">Built for <span class="accent">Production.</span></span>
+  </h1>
+  <p class="hero-sub">
+    Renfort de production fiable pour studios indépendants et AA.<br>
+    Props et environnements temps réel — optimisés, cohérents, prêts à l'intégration.
+  </p>
+  <div class="hero-actions">
+    <a href="#works" class="btn-primary">Voir mes projets <span class="btn-arrow">→</span></a>
+    <a href="#contact" class="btn-ghost">Discuter du projet <span class="btn-arrow">→</span></a>
+  </div>
+
+  <div class="hero-scroll">Scroll</div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-text reveal">
+    <div class="section-label">About</div>
+    <h2 class="section-title">Un interlocuteur unique.<br>Une qualité constante.</h2>
+    <p>
+      Je suis <strong>Adrien</strong>, artiste 3D freelance spécialisé dans la création d'assets temps réel pour jeux vidéo. J'interviens comme renfort de production pour studios <strong>indépendants et AA</strong> — là où chaque asset compte et où la cohérence visuelle fait la différence.
+    </p>
+    <p>
+      Mon approche combine vision <strong>artistique et technique</strong> : je comprends les contraintes de production, je respecte les DA existantes, et je livre des assets directement exploitables en moteur.
+    </p>
+    <div class="about-tools">
+      <div class="tools-label">Outils & moteurs</div>
+      <div class="tools-grid">
+        <span class="tool-pill">Maya</span>
+        <span class="tool-pill">ZBrush</span>
+        <span class="tool-pill">Substance Painter</span>
+        <span class="tool-pill">Substance Designer</span>
+        <span class="tool-pill">Marmoset Toolbag</span>
+        <span class="tool-pill">Unreal Engine</span>
+        <span class="tool-pill">Unity</span>
+        <span class="tool-pill">Photoshop</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="about-stats-wrapper reveal reveal-delay-2">
+  <div class="about-stats">
+
+    <!-- XP -->
+    <div class="stat-block" data-stat="xp">
+      <div class="stat-block-left">
+        <div class="stat-number">3<span>+</span></div>
+        <div class="stat-desc">Années d'expérience<br>en production temps réel</div>
+      </div>
+      <div class="stat-block-mid">
+        <p class="stat-detail-desc">Plus de <strong>3 ans</strong> en production temps réel : props, environnements, pipelines.</p>
+      </div>
+      <div class="stat-block-right">
+        <div class="stat-detail-diagram">
+          <svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="20" y1="52" x2="360" y2="52" stroke="rgba(253,254,249,0.06)" stroke-width="1"/>
+            <line x1="20" y1="52" x2="270" y2="52" stroke="#5F47E7" stroke-width="1.5" class="diag-line" stroke-linecap="round"/>
+            <circle cx="20" cy="52" r="3" fill="#5F47E7" class="diag-fade diag-fade-d1"/>
+            <circle cx="110" cy="52" r="3" fill="#5F47E7" class="diag-fade diag-fade-d2"/>
+            <circle cx="200" cy="52" r="3" fill="#5F47E7" class="diag-fade diag-fade-d3"/>
+            <circle cx="270" cy="52" r="5" fill="#7B63FF" class="diag-fade diag-fade-d4" style="filter:drop-shadow(0 0 5px #7B63FF)"/>
+            <circle cx="360" cy="52" r="3" fill="none" stroke="rgba(253,254,249,0.12)" stroke-width="1" stroke-dasharray="2 2"/>
+            <text x="20" y="70" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d1">2022</text>
+            <text x="110" y="70" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d2">2023</text>
+            <text x="200" y="70" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d3">2024</text>
+            <text x="270" y="70" fill="#7B63FF" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d4">2025</text>
+            <text x="270" y="30" fill="#5F47E7" font-family="DM Mono,monospace" font-size="7" letter-spacing="2" text-anchor="middle" class="diag-pulse">· NOW ·</text>
+            <line x1="110" y1="52" x2="110" y2="36" stroke="rgba(95,71,231,0.35)" stroke-width="1" stroke-dasharray="2 2" class="diag-fade diag-fade-d2"/>
+            <text x="110" y="30" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="7.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d2">Props</text>
+            <line x1="200" y1="52" x2="200" y2="36" stroke="rgba(95,71,231,0.35)" stroke-width="1" stroke-dasharray="2 2" class="diag-fade diag-fade-d3"/>
+            <text x="200" y="30" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="7.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d3">Enviro</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- IND -->
+    <div class="stat-block" data-stat="ind">
+      <div class="stat-block-left">
+        <div class="stat-number">Ind<span>&</span></div>
+        <div class="stat-desc">Studios indépendants<br>& équipes AA</div>
+      </div>
+      <div class="stat-block-mid">
+        <p class="stat-detail-desc">J'interviens auprès de <strong>studios indépendants</strong> et d'<strong>équipes AA</strong> — des productions qui ont besoin d'un renfort fiable, intégré directement dans le pipeline, sans friction.</p>
+      </div>
+      <div class="stat-block-right">
+        <div class="stat-detail-diagram">
+          <svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="190" cy="45" r="16" stroke="#5F47E7" stroke-width="1.2" class="diag-fade diag-fade-d1"/>
+            <circle cx="190" cy="45" r="11" fill="rgba(95,71,231,0.1)" class="diag-fade diag-fade-d1"/>
+            <text x="190" y="43" fill="#FDFEF9" font-family="Syne,sans-serif" font-weight="700" font-size="7" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d1">Adrien</text>
+            <text x="190" y="52" fill="#5F47E7" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d1">3D Artist</text>
+            <line x1="174" y1="45" x2="104" y2="30" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d2" stroke-linecap="round"/>
+            <circle cx="88" cy="25" r="14" stroke="rgba(95,71,231,0.5)" stroke-width="1" fill="rgba(95,71,231,0.05)" class="diag-fade diag-fade-d2"/>
+            <text x="88" y="23" fill="rgba(253,254,249,0.7)" font-family="DM Mono,monospace" font-size="7" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d2">Indie</text>
+            <text x="88" y="32" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d2">Studio</text>
+            <line x1="206" y1="45" x2="276" y2="30" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d3" stroke-linecap="round"/>
+            <circle cx="292" cy="25" r="14" stroke="rgba(123,99,255,0.6)" stroke-width="1" fill="rgba(123,99,255,0.07)" class="diag-fade diag-fade-d3"/>
+            <text x="292" y="23" fill="rgba(253,254,249,0.7)" font-family="DM Mono,monospace" font-size="7" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d3">Équipe</text>
+            <text x="292" y="32" fill="#7B63FF" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d3">AA</text>
+            <line x1="190" y1="61" x2="190" y2="74" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d4" stroke-linecap="round"/>
+            <rect x="150" y="76" width="80" height="12" rx="0" stroke="rgba(95,71,231,0.3)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d4"/>
+            <text x="190" y="85" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="6.5" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d4">Pipeline intégré</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- PBR -->
+    <div class="stat-block" data-stat="pbr">
+      <div class="stat-block-left">
+        <div class="stat-number">PBR</div>
+        <div class="stat-desc">UV / Textures<br>Pipeline propre</div>
+      </div>
+      <div class="stat-block-mid">
+        <p class="stat-detail-desc">Chaque asset passe par un <strong>pipeline PBR rigoureux</strong> : unwrap optimisé, textures cohérentes (Albedo, Normal, ORM), bake propre depuis high-poly, prêt à l'intégration immédiate en moteur.</p>
+      </div>
+      <div class="stat-block-right">
+        <div class="stat-detail-diagram">
+          <svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="28" width="54" height="36" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d1"/>
+            <text x="37" y="44" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="7.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d1">High</text>
+            <text x="37" y="54" fill="rgba(253,254,249,0.35)" font-family="DM Mono,monospace" font-size="6.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d1">Poly</text>
+            <line x1="64" y1="46" x2="80" y2="46" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d2" stroke-linecap="round"/>
+            <text x="72" y="42" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" class="diag-fade diag-fade-d2">→</text>
+            <rect x="82" y="28" width="54" height="36" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d2"/>
+            <text x="109" y="44" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="7.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d2">UV</text>
+            <text x="109" y="54" fill="rgba(253,254,249,0.35)" font-family="DM Mono,monospace" font-size="6.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d2">Unwrap</text>
+            <line x1="136" y1="46" x2="152" y2="46" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d3" stroke-linecap="round"/>
+            <text x="144" y="42" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" class="diag-fade diag-fade-d3">→</text>
+            <rect x="154" y="28" width="54" height="36" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d3"/>
+            <text x="181" y="44" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="7.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d3">BAKE</text>
+            <text x="181" y="54" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d3">Marmoset</text>
+            <line x1="208" y1="46" x2="224" y2="46" stroke="rgba(95,71,231,0.5)" stroke-width="1" class="diag-line diag-line-d4" stroke-linecap="round"/>
+            <text x="216" y="42" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" class="diag-fade diag-fade-d4">→</text>
+            <rect x="226" y="20" width="72" height="52" rx="0" stroke="#5F47E7" stroke-width="1.5" fill="rgba(95,71,231,0.08)" class="diag-fade diag-fade-d4"/>
+            <text x="262" y="36" fill="#FDFEF9" font-family="Syne,sans-serif" font-weight="700" font-size="9" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d4">PBR</text>
+            <text x="262" y="48" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d4">Albedo · Normal</text>
+            <text x="262" y="58" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d4">ORM · Emissive</text>
+            <text x="262" y="66" fill="#7B63FF" font-family="DM Mono,monospace" font-size="5.5" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d4">Substance</text>
+            <line x1="298" y1="46" x2="318" y2="46" stroke="rgba(123,99,255,0.5)" stroke-width="1" class="diag-line diag-line-d5" stroke-linecap="round"/>
+            <text x="348" y="50" fill="#7B63FF" font-family="DM Mono,monospace" font-size="7.5" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d4">→ Moteur</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOD -->
+    <div class="stat-block" data-stat="lod">
+      <div class="stat-block-left">
+        <div class="stat-number">LOD<span>s</span></div>
+        <div class="stat-desc">Assets optimisés<br>prêts moteur</div>
+      </div>
+      <div class="stat-block-mid">
+        <p class="stat-detail-desc">Chaque asset est livré avec ses <strong>niveaux de détail</strong> (LOD0 → LOD3) : polycount décroissant, textures adaptées, prêts pour les <strong>systèmes de streaming</strong> d'Unreal Engine et Unity.</p>
+      </div>
+      <div class="stat-block-right">
+        <div class="stat-detail-diagram">
+          <svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="15" width="60" height="60" rx="0" stroke="#5F47E7" stroke-width="1.5" fill="rgba(95,71,231,0.1)" class="diag-fade diag-fade-d1"/>
+            <polygon points="40,25 54,48 26,48" stroke="#7B63FF" stroke-width="1.2" fill="rgba(123,99,255,0.15)" class="diag-fade diag-fade-d1"/>
+            <text x="40" y="65" fill="#FDFEF9" font-family="Syne,sans-serif" font-weight="700" font-size="7" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d1">LOD 0</text>
+            <text x="40" y="74" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d1">100%</text>
+            <text x="84" y="46" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="10" text-anchor="middle" class="diag-fade diag-fade-d2">›</text>
+            <rect x="96" y="22" width="48" height="48" rx="0" stroke="rgba(95,71,231,0.55)" stroke-width="1" fill="rgba(95,71,231,0.05)" class="diag-fade diag-fade-d2"/>
+            <polygon points="120,30 132,50 108,50" stroke="#5F47E7" stroke-width="1" fill="rgba(95,71,231,0.1)" class="diag-fade diag-fade-d2"/>
+            <text x="120" y="65" fill="rgba(253,254,249,0.65)" font-family="Syne,sans-serif" font-weight="700" font-size="7" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d2">LOD 1</text>
+            <text x="120" y="74" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d2">~50%</text>
+            <text x="158" y="46" fill="rgba(95,71,231,0.4)" font-family="DM Mono,monospace" font-size="10" text-anchor="middle" class="diag-fade diag-fade-d3">›</text>
+            <rect x="168" y="28" width="38" height="38" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.03)" class="diag-fade diag-fade-d3"/>
+            <polygon points="187,34 197,50 177,50" stroke="rgba(95,71,231,0.6)" stroke-width="0.8" fill="rgba(95,71,231,0.06)" class="diag-fade diag-fade-d3"/>
+            <text x="187" y="65" fill="rgba(253,254,249,0.45)" font-family="Syne,sans-serif" font-weight="700" font-size="7" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d3">LOD 2</text>
+            <text x="187" y="74" fill="rgba(253,254,249,0.25)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d3">~25%</text>
+            <text x="220" y="46" fill="rgba(95,71,231,0.3)" font-family="DM Mono,monospace" font-size="10" text-anchor="middle" class="diag-fade diag-fade-d4">›</text>
+            <rect x="228" y="34" width="28" height="28" rx="0" stroke="rgba(95,71,231,0.2)" stroke-width="1" fill="rgba(95,71,231,0.02)" class="diag-fade diag-fade-d4"/>
+            <polygon points="242,38 250,50 234,50" stroke="rgba(95,71,231,0.4)" stroke-width="0.8" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d4"/>
+            <text x="242" y="65" fill="rgba(253,254,249,0.28)" font-family="Syne,sans-serif" font-weight="700" font-size="7" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d4">LOD 3</text>
+            <text x="242" y="74" fill="rgba(253,254,249,0.18)" font-family="DM Mono,monospace" font-size="6" letter-spacing="0.5" text-anchor="middle" class="diag-fade diag-fade-d4">~10%</text>
+            <line x1="10" y1="83" x2="370" y2="83" stroke="rgba(253,254,249,0.05)" stroke-width="1"/>
+            <text x="190" y="90" fill="rgba(253,254,249,0.15)" font-family="DM Mono,monospace" font-size="6" letter-spacing="2" text-anchor="middle">DISTANCE →</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- .about-stats -->
+
+  <!-- Stat Popup -->
+  <div class="stat-popup" id="statPopup">
+    <div class="stat-popup-header">
+      <div>
+        <div class="stat-popup-label" id="spLabel"></div>
+        <div class="stat-popup-title" id="spTitle"></div>
+      </div>
+      <button class="stat-popup-close" id="spClose">✕</button>
+    </div>
+    <div class="stat-popup-diagram" id="spDiagram"></div>
+    <div class="stat-popup-desc" id="spDesc"></div>
+  </div>
+
+  </div><!-- .about-stats-wrapper -->
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <div class="services-header reveal">
+    <div>
+      <div class="section-label">Services</div>
+      <h2 class="section-title">Ce que je produis.</h2>
+    </div>
+    <a href="#contact" class="btn-ghost">Discuter du projet <span class="btn-arrow">→</span></a>
+  </div>
+
+  <div class="services-grid">
+    <!-- Service 1 -->
+    <div class="service-card reveal">
+      <div class="service-number">01</div>
+      <svg class="service-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="20" width="24" height="14" rx="1" stroke="#5F47E7" stroke-width="1.2"/>
+        <path d="M8 20L20 10L32 20" stroke="#5F47E7" stroke-width="1.2"/>
+        <line x1="20" y1="10" x2="20" y2="6" stroke="#5F47E7" stroke-width="1.2"/>
+        <rect x="15" y="27" width="10" height="7" stroke="#5F47E7" stroke-width="1.2" rx="0.5"/>
+      </svg>
+      <div class="service-name">Création de Props 3D<br>Temps Réel</div>
+      <p class="service-desc">Props hard-surface et décor optimisés, cohérents et directement exploitables en production.</p>
+      <ul class="service-includes">
+        <li>Props hard-surface & décor</li>
+        <li>UV & textures PBR</li>
+        <li>Optimisation temps réel</li>
+        <li>Prêt Unity / Unreal</li>
+        <li>Respect strict de la DA</li>
+      </ul>
+      <a href="#contact" class="service-cta">Discuter du projet →</a>
+    </div>
+
+    <!-- Service 2 -->
+    <div class="service-card reveal reveal-delay-1">
+      <div class="service-number">02</div>
+      <svg class="service-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="4" width="14" height="14" rx="1" stroke="#5F47E7" stroke-width="1.2"/>
+        <rect x="22" y="4" width="14" height="14" rx="1" stroke="#5F47E7" stroke-width="1.2"/>
+        <rect x="4" y="22" width="14" height="14" rx="1" stroke="#5F47E7" stroke-width="1.2"/>
+        <rect x="22" y="22" width="14" height="14" rx="1" stroke="#5F47E7" stroke-width="1.2"/>
+      </svg>
+      <div class="service-name">Sets d'Environnement<br>Modulaires</div>
+      <p class="service-desc">Kits modulaires conçus pour la performance, l'assemblage rapide et la cohérence visuelle.</p>
+      <ul class="service-includes">
+        <li>Conception modulaire</li>
+        <li>Variantes & déclinaisons</li>
+        <li>Optimisation performance</li>
+        <li>Documentation d'assemblage</li>
+        <li>Intégration moteur</li>
+      </ul>
+      <a href="#contact" class="service-cta">Discuter du projet →</a>
+    </div>
+
+    <!-- Service 3 -->
+    <div class="service-card reveal reveal-delay-2">
+      <div class="service-number">03</div>
+      <div class="service-premium">Sprint</div>
+      <svg class="service-icon" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="14" stroke="#5F47E7" stroke-width="1.2"/>
+        <path d="M20 12V20L26 24" stroke="#5F47E7" stroke-width="1.2" stroke-linecap="round"/>
+        <circle cx="20" cy="20" r="2" fill="#5F47E7"/>
+      </svg>
+      <div class="service-name">Renfort de Production<br>Sprint Assets 3D</div>
+      <p class="service-desc">Intégration directe dans votre pipeline. Un interlocuteur unique, des objectifs définis, une priorité production.</p>
+      <ul class="service-includes">
+        <li>X jours / semaines définis</li>
+        <li>Intégration pipeline studio</li>
+        <li>Objectifs & livrables clairs</li>
+        <li>Communication fluide</li>
+        <li>Priorité production</li>
+      </ul>
+      <a href="#contact" class="service-cta">Discuter du projet →</a>
+    </div>
+  </div>
+</section>
+
+<!-- WORKS -->
+<section id="works">
+  <div class="works-header reveal">
+    <div>
+      <div class="section-label">Portfolio</div>
+      <h2 class="section-title">My Works.</h2>
+    </div>
+    <a href="https://www.artstation.com/adrien_corbeille" target="_blank" class="btn-ghost">Voir ArtStation →</a>
+  </div>
+
+  <div class="works-grid" id="worksGrid">
+    <!-- Populated dynamically by JS -->
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="reveal" style="max-width:600px;">
+    <div class="section-label">Process</div>
+    <h2 class="section-title">Comment je travaille.</h2>
+  </div>
+  <div class="process-steps">
+    <div class="process-step reveal">
+      <div class="step-num">01</div>
+      <div class="step-name">Analyse DA</div>
+      <div class="step-desc">Étude de la direction artistique et des contraintes techniques</div>
+    </div>
+    <div class="process-step reveal reveal-delay-1">
+      <div class="step-num">02</div>
+      <div class="step-name">Blockout</div>
+      <div class="step-desc">Validation des volumes et proportions avant production</div>
+    </div>
+    <div class="process-step reveal reveal-delay-2">
+      <div class="step-num">03</div>
+      <div class="step-name">Production</div>
+      <div class="step-desc">Modélisation, UV, texturing PBR, bake maps</div>
+    </div>
+    <div class="process-step reveal reveal-delay-3">
+      <div class="step-num">04</div>
+      <div class="step-name">Optimisation</div>
+      <div class="step-desc">LODs, polycount, texel density, intégration moteur</div>
+    </div>
+    <div class="process-step reveal reveal-delay-3">
+      <div class="step-num">05</div>
+      <div class="step-name">Livraison</div>
+      <div class="step-desc">Ajustements finaux, documentation, formats propres</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="contact-inner">
+    <div class="contact-info reveal">
+      <div class="section-label">Contact</div>
+      <h2 class="section-title">Démarrons<br>un projet.</h2>
+      <p>
+        Un besoin en production d'assets 3D ? Un sprint à renforcer ? Parlons-en. Je réponds sous 24h.
+      </p>
+      <div class="contact-links">
+        <a href="mailto:adriencorbeille.contact@gmail.com" class="contact-link">
+          <span class="contact-link-label">Email</span>
+          adriencorbeille.contact@gmail.com
+        </a>
+        <a href="https://www.artstation.com/adrien_corbeille" target="_blank" class="contact-link">
+          <span class="contact-link-label">ArtStation</span>
+          adrien_corbeille
+        </a>
+        <a href="https://www.linkedin.com/in/adrien-corbeille-51b626222/" target="_blank" class="contact-link">
+          <span class="contact-link-label">LinkedIn</span>
+          Adrien Corbeille
+        </a>
+        <a href="https://calendly.com/app/scheduling/meeting_types/user/me" target="_blank" class="contact-link">
+          <span class="contact-link-label">RDV</span>
+          Réserver un créneau →
+        </a>
+      </div>
+    </div>
+
+    <div class="contact-form reveal reveal-delay-1">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Nom</label>
+          <input type="text" class="form-input" placeholder="Studio / Nom">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" placeholder="contact@studio.com">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sujet</label>
+        <input type="text" class="form-input" placeholder="Props 3D · Sets modulaires · Sprint · Autre">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-textarea" placeholder="Décrivez votre projet, vos contraintes, vos délais..."></textarea>
+      </div>
+      <button type="submit" class="form-submit">Envoyer le message →</button>
+      <p class="calendly-note">Ou <a href="https://calendly.com/app/scheduling/meeting_types/user/me" target="_blank">réservez directement un créneau</a> via Calendly.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Arcobel<span>.</span></div>
+  <span class="footer-copy">© 2026 Arcobel Interactive — Adrien · Auto-entrepreneur</span>
+  <div class="footer-legal">
+    <a href="#" id="openCgv"><span class="footer-legal-abbr">CGV</span></a>
+    <div class="footer-legal-sep"></div>
+    <a href="#" id="openCgu"><span class="footer-legal-abbr">CGU</span></a>
+  </div>
+</footer>
+
+<!-- ── MODALE CGV ── -->
+<div class="legal-overlay" id="cgvOverlay">
+  <div class="legal-modal">
+    <div class="legal-modal-header">
+      <div>
+        <div class="legal-modal-label">Arcobel Interactive · Adrien</div>
+        <div class="legal-modal-title">Conditions Générales de Vente</div>
+      </div>
+      <button class="legal-modal-close" id="cgvClose">✕</button>
+    </div>
+    <div class="legal-modal-body">
+
+      <h3>Identité du prestataire</h3>
+      <p>Adrien Corbeille (alias Fozen)<br>Auto-entrepreneur sous l'enseigne <strong>Arcobel</strong><br>SIRET : 93959074100012<br>Adresse : 5 rue du Barriol, 84110 Faucon<br>Prestations de modélisation 3D pour le jeu vidéo</p>
+
+      <h3>1. Objet</h3>
+      <p>Les présentes Conditions Générales de Vente (CGV) régissent les prestations de services proposées par Adrien Corbeille (Fozen), auto-entrepreneur exerçant sous le nom commercial <strong>Arcobel</strong>, dans le domaine de la modélisation 3D destinée à l'industrie du jeu vidéo.</p>
+
+      <h3>2. Prestations proposées</h3>
+      <p>Les services proposés sont les suivants :<br>– Création de packs d'assets modulaires 3D<br>– Création de packs de props 3D<br>– Création de props « game ready » (haute qualité)<br><br>Chaque prestation est proposée en plusieurs forfaits (Basic, Standard, Premium) incluant un nombre défini de révisions et des options supplémentaires.</p>
+
+      <h3>3. Commande & formulaire</h3>
+      <p>Avant toute commande, le client est invité à remplir un formulaire de contact permettant de définir ses besoins. La validation d'une commande, via Fiverr ou en direct, implique l'acceptation pleine et entière des présentes CGV.</p>
+
+      <h3>4. Tarifs & paiement</h3>
+      <p>Les prix sont indiqués en euros, sans TVA (article 293 B du CGI). Le paiement s'effectue via Fiverr ou directement selon accord préalable.<br><br>Un acompte de <strong>50 %</strong> du montant total est exigé à la commande. En cas de désistement après démarrage, cet acompte reste acquis au prestataire. Le solde est dû à la livraison des fichiers.</p>
+
+      <h3>5. Livraison</h3>
+      <p>Les livraisons sont réalisées par voie numérique dans les délais définis pour chaque forfait. Les retards causés par l'absence de réponse ou d'informations du client ne sauraient engager la responsabilité du prestataire.</p>
+
+      <h3>6. Révisions</h3>
+      <p>Chaque forfait inclut un nombre défini de révisions. Toute demande de révision supplémentaire ou de modification substantielle fera l'objet d'un devis complémentaire.</p>
+
+      <h3>7. Propriété intellectuelle</h3>
+      <p>Le client obtient un droit d'usage personnel, non exclusif et non transférable sur les créations livrées. Les fichiers sources restent la propriété exclusive du prestataire, sauf mention contraire dans le devis.<br><br>Fozen se réserve le droit d'utiliser les créations à des fins de portfolio et communication, sauf demande écrite du client avant le début du projet.</p>
+
+      <h3>8. Droit de rétractation</h3>
+      <p>Conformément à l'article L221-28 du Code de la consommation, le droit de rétractation ne s'applique pas aux prestations personnalisées dès lors que l'exécution a commencé.</p>
+
+      <h3>9. Données personnelles</h3>
+      <p>Les données personnelles collectées sont utilisées uniquement pour le traitement de la commande et la relation client. Elles ne sont jamais transmises à des tiers.</p>
+
+      <h3>10. Litiges</h3>
+      <p>En cas de litige, les parties s'engagent à rechercher une solution amiable en priorité. Le client peut recourir gratuitement à un médiateur de la consommation (<a href="https://www.economie.gouv.fr/mediation-conso" target="_blank" style="color:var(--accent)">economie.gouv.fr/mediation-conso</a>). À défaut, seuls les tribunaux français seront compétents.</p>
+
+    </div>
+    <div class="legal-modal-footer">
+      <span class="legal-modal-footer-note">Dernière mise à jour : 09/07/2025</span>
+      <button class="legal-modal-footer-btn" id="cgvCloseBtn">Fermer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODALE CGU ── -->
+<div class="legal-overlay" id="cguOverlay">
+  <div class="legal-modal">
+    <div class="legal-modal-header">
+      <div>
+        <div class="legal-modal-label">Arcobel Interactive · Adrien</div>
+        <div class="legal-modal-title">Conditions Générales d'Utilisation</div>
+      </div>
+      <button class="legal-modal-close" id="cguClose">✕</button>
+    </div>
+    <div class="legal-modal-body">
+
+      <h3>1. Acceptation</h3>
+      <p>En utilisant ce site, vous acceptez les présentes conditions.</p>
+
+      <h3>2. Utilisation des contenus</h3>
+      <p>Les créations 3D et images présentes sur ce site sont protégées par le droit d'auteur. Toute utilisation sans autorisation est interdite.<br><br>Les artworks d'autres artistes affichés sont toujours crédités, conformément à leurs conditions d'utilisation.</p>
+
+      <h3>3. Responsabilité</h3>
+      <p>L'éditeur ne peut être tenu responsable d'éventuels dysfonctionnements ou erreurs ponctuelles sur le site.</p>
+
+      <h3>4. Mentions légales</h3>
+      <p><strong>Éditeur du site :</strong><br>Adrien Corbeille (auto-entrepreneur)<br>Nom commercial : Arcobel<br>Pseudonyme : Fozen<br>Email : <a href="mailto:adriencorbeille.contact@gmail.com" style="color:var(--accent)">adriencorbeille.contact@gmail.com</a><br>Basé en France</p>
+      <p><strong>Hébergement :</strong><br>Wix Online Platform Limited<br>1 Grant's Row, Dublin 2 D02HX96, Ireland</p>
+      <p><strong>Propriété intellectuelle :</strong><br>Tous les contenus (textes, images, créations 3D) sont la propriété exclusive de Fozen (Adrien Corbeille), sauf mention contraire. Toute reproduction sans autorisation est interdite.</p>
+
+      <h3>5. Données personnelles & cookies</h3>
+      <p>Seules les données suivantes peuvent être collectées :<br>– Adresse email (via formulaire de contact)<br>– Informations relatives au projet<br><br>Les données sont utilisées uniquement pour la gestion des échanges et le suivi de projet. Elles ne sont jamais cédées à des tiers.<br><br>Ce site ne collecte pas de cookies et ne trace aucun comportement utilisateur.</p>
+
+      <h3>6. Vos droits (RGPD)</h3>
+      <p>Conformément au RGPD, vous pouvez demander l'accès, la modification ou la suppression de vos données à tout moment :<br><a href="mailto:adriencorbeille.contact@gmail.com" style="color:var(--accent)">adriencorbeille.contact@gmail.com</a></p>
+
+      <h3>7. Contact</h3>
+      <p>Pour toute question ou demande : <a href="mailto:adriencorbeille.contact@gmail.com" style="color:var(--accent)">adriencorbeille.contact@gmail.com</a></p>
+
+    </div>
+    <div class="legal-modal-footer">
+      <span class="legal-modal-footer-note">Dernière mise à jour : 30 juin 2025</span>
+      <button class="legal-modal-footer-btn" id="cguCloseBtn">Fermer →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── LIGHTBOX ── -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+  <button class="lightbox-nav prev" id="lightboxPrev">←</button>
+  <button class="lightbox-nav next" id="lightboxNext">→</button>
+  <div class="lightbox-inner">
+    <img class="lightbox-img" id="lightboxImg" src="" alt="">
+    <div class="lightbox-meta">
+      <div class="lightbox-title" id="lightboxTitle"></div>
+      <div class="lightbox-sub" id="lightboxSub"></div>
+    </div>
+  </div>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<!-- ── ADMIN PASSWORD MODAL ── -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-modal">
+    <button class="admin-close" id="adminCloseModal" title="Fermer">✕</button>
+    <div class="admin-modal-title">Admin Access</div>
+    <div class="admin-modal-sub">// zone protégée · arcobel-interactive</div>
+    <input type="password" class="admin-input" id="adminPasswordInput" placeholder="Mot de passe" autocomplete="current-password">
+    <div class="admin-field" style="margin-bottom:1rem;">
+      <label style="font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:0.4rem;display:block;">GitHub Personal Access Token</label>
+      <input type="password" class="admin-input" id="adminTokenInput" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="margin-bottom:0;" autocomplete="off">
+      <div style="font-size:0.58rem;color:var(--muted);margin-top:0.4rem;letter-spacing:0.04em;">Nécessaire pour uploader des images. <a href="https://github.com/settings/tokens/new?scopes=repo&description=Arcobel+Works" target="_blank" style="color:var(--accent);text-decoration:none;">Créer un token →</a></div>
+    </div>
+    <div class="admin-error-msg" id="adminErrorMsg">Mot de passe incorrect.</div>
+    <button class="admin-btn" id="adminLoginBtn">Accéder →</button>
+  </div>
+</div>
+
+<!-- ── ADMIN PANEL BACKDROP ── -->
+<div class="admin-panel-backdrop" id="adminBackdrop"></div>
+
+<!-- ── ADMIN PANEL ── -->
+<div class="admin-panel" id="adminPanel">
+  <div class="admin-panel-header">
+    <div class="admin-panel-title">
+      <span>Admin</span>
+      My Works
+    </div>
+    <div style="display:flex;gap:0.8rem;align-items:center;">
+      <button class="admin-logout-btn" id="adminLogoutBtn">Déconnexion</button>
+      <button class="admin-close" id="adminClosePanel" title="Fermer">✕</button>
+    </div>
+  </div>
+
+  <!-- ADD PROJECT FORM -->
+  <div class="admin-form-section">
+    <div class="admin-form-section-title">＋ Ajouter un projet</div>
+
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="imageInput" accept="image/*">
+      <img class="upload-preview" id="uploadPreview" alt="preview">
+      <div id="uploadPlaceholder">
+        <div class="upload-zone-icon">⬆</div>
+        <div class="upload-zone-text">Glisser une image ou cliquer</div>
+      </div>
+      <div class="upload-preview-name" id="uploadFileName"></div>
+    </div>
+
+    <div class="admin-form-row">
+      <div class="admin-field">
+        <label>Titre du projet</label>
+        <input type="text" id="projTitle" placeholder="Ex: Industrial Props Set">
+      </div>
+      <div class="admin-field">
+        <label>Catégorie</label>
+        <input type="text" id="projCat" placeholder="Ex: Hard Surface · Props">
+      </div>
+    </div>
+    <div class="admin-field">
+      <label>Moteur / Technique</label>
+      <input type="text" id="projEngine" placeholder="Ex: Unreal Engine 5 · PBR">
+    </div>
+
+    <button class="admin-submit-btn" id="addProjectBtn">Ajouter au portfolio →</button>
+  </div>
+
+  <!-- PROJECTS LIST -->
+  <div class="admin-form-section">
+    <div class="admin-form-section-title">◼ Projets publiés</div>
+    <div class="admin-projects-list" id="adminProjectsList">
+      <!-- populated by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ── ADMIN TRIGGER BADGE ── -->
+<div class="admin-trigger-badge" id="adminTriggerBadge">
+  ⚙ Gérer Works
+</div>
+
+<script>
+  // ── Scroll progress bar ──
+  const progressBar = document.getElementById('scroll-progress');
+  const navbar = document.getElementById('navbar');
+
+  window.addEventListener('scroll', () => {
+    const total = document.documentElement.scrollHeight - window.innerHeight;
+    progressBar.style.width = (window.scrollY / total * 100) + '%';
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+    updateActiveNav();
+  }, { passive: true });
+
+  // ── Custom cursor with smooth laggy ring ──
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let cx = 0, cy = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    cx = e.clientX; cy = e.clientY;
+    cursor.style.left = cx + 'px';
+    cursor.style.top = cy + 'px';
+  });
+  (function animateRing() {
+    rx += (cx - rx) * 0.1; ry += (cy - ry) * 0.1;
+    ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+    requestAnimationFrame(animateRing);
+  })();
+
+  document.querySelectorAll('a, button, .service-card, .work-card, .tool-pill, .stat-block, .process-step, .upload-zone, .admin-input, .admin-field input, .admin-field select').forEach(el => {
+    el.addEventListener('mouseenter', () => { cursor.classList.add('hovering'); ring.classList.add('hovering'); });
+    el.addEventListener('mouseleave', () => { cursor.classList.remove('hovering'); ring.classList.remove('hovering'); });
+  });
+
+  // ── Active nav tracking ──
+  const sectionIds = ['hero','about','services','works','process','contact'];
+  const navAnchors = {};
+  document.querySelectorAll('.nav-links a').forEach(a => { navAnchors[a.getAttribute('href').slice(1)] = a; });
+  function updateActiveNav() {
+    let current = 'hero';
+    sectionIds.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && el.getBoundingClientRect().top < window.innerHeight * 0.45) current = id;
+    });
+    Object.entries(navAnchors).forEach(([id, a]) => a.classList.toggle('active', id === current));
+  }
+  updateActiveNav();
+
+  // ── Scroll reveal ──
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
+
+  // ── Ripple factory ──
+  function spawnRipple(e, el) {
+    const rect = el.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height) * 1.5;
+    const rip = document.createElement('span');
+    rip.className = 'ripple';
+    rip.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size/2}px;top:${e.clientY - rect.top - size/2}px`;
+    el.appendChild(rip);
+    rip.addEventListener('animationend', () => rip.remove());
+  }
+
+  // ── Pulse ring on button ──
+  function pulseBtn(el) {
+    el.classList.remove('btn-pulse'); void el.offsetWidth; el.classList.add('btn-pulse');
+    el.addEventListener('animationend', () => el.classList.remove('btn-pulse'), { once: true });
+  }
+
+  // ── Animated easing scroll ──
+  function smoothScrollTo(targetId, triggerEl, e) {
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    if (e) e.preventDefault();
+    if (triggerEl && e) { spawnRipple(e, triggerEl); pulseBtn(triggerEl); }
+
+    const startY = window.scrollY;
+    const endY = target.getBoundingClientRect().top + startY - navbar.offsetHeight - 20;
+    const dist = endY - startY;
+    const duration = Math.min(950, Math.max(420, Math.abs(dist) * 0.45));
+    let start = null;
+    const ease = t => t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+
+    requestAnimationFrame(function step(ts) {
+      if (!start) start = ts;
+      const p = Math.min((ts - start) / duration, 1);
+      window.scrollTo(0, startY + dist * ease(p));
+      if (p < 1) {
+        requestAnimationFrame(step);
+      } else {
+        target.classList.remove('section-flash');
+        void target.offsetWidth;
+        target.classList.add('section-flash');
+        target.addEventListener('animationend', () => target.classList.remove('section-flash'), { once: true });
+      }
+    });
+  }
+
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', e => {
+      const id = link.getAttribute('href').slice(1);
+      if (id) smoothScrollTo(id, link, e);
+    });
+  });
+
+  // ── Magnetic hover on CTA buttons ──
+  document.querySelectorAll('.btn-primary, .btn-ghost, .nav-cta').forEach(btn => {
+    btn.addEventListener('mousemove', e => {
+      const r = btn.getBoundingClientRect();
+      const mx = (e.clientX - r.left - r.width/2) / r.width;
+      const my = (e.clientY - r.top - r.height/2) / r.height;
+      btn.style.transform = `translate(${mx*7}px, ${my*4 - 2}px)`;
+    });
+    btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+    btn.addEventListener('click', e => { spawnRipple(e, btn); pulseBtn(btn); });
+  });
+
+  // ── Dynamic bg blob ──
+  const blob = document.getElementById('bgBlob');
+  const blobColors = { hero:'rgba(95,71,231,0.07)', about:'rgba(95,71,231,0.05)', services:'rgba(95,71,231,0.10)', works:'rgba(95,71,231,0.06)', process:'rgba(95,71,231,0.04)', contact:'rgba(95,71,231,0.09)' };
+  const blobObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting && blobColors[e.target.id]) blob.style.background = `radial-gradient(circle, ${blobColors[e.target.id]} 0%, transparent 70%)`; });
+  }, { threshold: 0.35 });
+  sectionIds.forEach(id => { const el = document.getElementById(id); if (el) blobObs.observe(el); });
+
+  // ── Form submit ──
+  document.querySelector('.form-submit').addEventListener('click', function(e) {
+    spawnRipple(e, this); pulseBtn(this);
+    this.innerHTML = '✓ Message envoyé';
+    this.style.background = '#2a7a48';
+    this.disabled = true;
+    setTimeout(() => {
+      this.innerHTML = 'Envoyer le message <span class="btn-arrow">→</span>';
+      this.style.background = ''; this.disabled = false;
+    }, 3000);
+  });
+
+  // ── Service CTA ripple ──
+  document.querySelectorAll('.service-cta').forEach(cta => {
+    cta.addEventListener('click', e => spawnRipple(e, cta));
+  });
+
+
+  // ══════════════════════════════════════════════
+  // ── ADMIN SYSTEM — GitHub Backend ─────────────
+  // ══════════════════════════════════════════════
+
+  // ── Config ──
+  const GH_OWNER  = 'Arcobel Interactive';
+  const GH_REPO   = 'testsiteez';
+  const GH_BRANCH = 'main';
+  const WORKS_FILE = 'works.json'; 
+  const IMAGES_DIR = 'works-images';
+
+  // To change: https://emn178.github.io/online-tools/sha256.html
+  const ADMIN_PASSWORD_HASH = '13c824a6b87e42c26050c6f6af99451965e666faff55d298e3fea3f2253b9704';
+
+  const SESSION_KEY    = 'arcobel_admin_session';
+  const TOKEN_KEY      = 'arcobel_gh_token';
+  const LOCAL_CACHE    = 'arcobel_works_cache';
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  }
+
+  function getToken()    { return sessionStorage.getItem(TOKEN_KEY) || ''; }
+  function setToken(t)   { sessionStorage.setItem(TOKEN_KEY, t); }
+  function isAdminLoggedIn() { return sessionStorage.getItem(SESSION_KEY) === '1'; }
+  function setAdminSession(v) { v ? sessionStorage.setItem(SESSION_KEY,'1') : sessionStorage.removeItem(SESSION_KEY); }
+
+  function rawUrl(path) {
+    return `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${path}?t=${Date.now()}`;
+  }
+
+  // ── GitHub API helpers ──
+  async function ghGet(path) {
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`,
+      { headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/vnd.github+json' } }
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`GitHub API ${res.status}`);
+    return res.json();
+  }
+
+  async function ghPutText(path, text, sha, msg) {
+    const body = { message: msg, content: btoa(unescape(encodeURIComponent(text))), branch: GH_BRANCH };
+    if (sha) body.sha = sha;
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`,
+      { method:'PUT', headers:{ Authorization:`Bearer ${getToken()}`, 'Content-Type':'application/json', Accept:'application/vnd.github+json' }, body:JSON.stringify(body) }
+    );
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'GitHub write error'); }
+    return res.json();
+  }
+
+  async function ghPutBinary(path, base64, sha, msg) {
+    const body = { message: msg, content: base64, branch: GH_BRANCH };
+    if (sha) body.sha = sha;
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`,
+      { method:'PUT', headers:{ Authorization:`Bearer ${getToken()}`, 'Content-Type':'application/json', Accept:'application/vnd.github+json' }, body:JSON.stringify(body) }
+    );
+    if (!res.ok) { const e = await res.json(); throw new Error(e.message || 'GitHub image upload error'); }
+    return res.json();
+  }
+
+  async function ghDelete(path, sha, msg) {
+    const res = await fetch(
+      `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`,
+      { method:'DELETE', headers:{ Authorization:`Bearer ${getToken()}`, 'Content-Type':'application/json', Accept:'application/vnd.github+json' }, body:JSON.stringify({ message:msg, sha, branch:GH_BRANCH }) }
+    );
+    return res.ok;
+  }
+
+  // ── Projects data layer ──
+  let worksCache = { projects: [], sha: null };
+
+  async function loadProjects() {
+    try {
+      // Public raw URL — no auth needed, visible to all
+      const res = await fetch(rawUrl(WORKS_FILE));
+      if (res.ok) {
+        const projects = await res.json();
+        worksCache.projects = Array.isArray(projects) ? projects : [];
+        localStorage.setItem(LOCAL_CACHE, JSON.stringify(worksCache.projects));
+      } else {
+        // Fallback to local cache if GitHub unreachable
+        const cached = localStorage.getItem(LOCAL_CACHE);
+        worksCache.projects = cached ? JSON.parse(cached) : [];
+      }
+    } catch {
+      const cached = localStorage.getItem(LOCAL_CACHE);
+      worksCache.projects = cached ? JSON.parse(cached) : [];
+    }
+    // Get SHA (for future writes, needs token)
+    if (isAdminLoggedIn()) {
+      try {
+        const file = await ghGet(WORKS_FILE);
+        worksCache.sha = file?.sha || null;
+      } catch { worksCache.sha = null; }
+    }
+    return worksCache.projects;
+  }
+
+  async function saveProjects() {
+    const result = await ghPutText(
+      WORKS_FILE,
+      JSON.stringify(worksCache.projects, null, 2),
+      worksCache.sha,
+      'chore: update works.json'
+    );
+    worksCache.sha = result.content?.sha || null;
+    localStorage.setItem(LOCAL_CACHE, JSON.stringify(worksCache.projects));
+  }
+
+  // ── Grid ──
+  const GRID_PATTERNS = [
+    { span:8, ratio:'16/9' }, { span:4, ratio:'4/3' },
+    { span:4, ratio:'4/3' }, { span:8, ratio:'16/9' },
+    { span:6, ratio:'4/3' }, { span:6, ratio:'4/3' },
+  ];
+
+  function projectImageUrl(p) {
+    if (!p.imagePath) return null;
+    return `https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${GH_BRANCH}/${p.imagePath}`;
+  }
+
+  function renderWorksGrid() {
+    const grid = document.getElementById('worksGrid');
+    const projects = worksCache.projects;
+    grid.innerHTML = '';
+
+    if (!projects.length) {
+      grid.innerHTML = `<div class="works-empty-state">
+        <div class="works-empty-icon">◻</div>
+        <div class="works-empty-text">Aucun projet — connecte-toi en admin pour ajouter tes works</div>
+      </div>`;
+      return;
+    }
+
+    projects.forEach((p, i) => {
+      const pat = GRID_PATTERNS[i % GRID_PATTERNS.length];
+      const imgUrl = projectImageUrl(p);
+      const card = document.createElement('div');
+      card.className = 'work-card' + (imgUrl ? ' has-image' : '');
+      card.style.gridColumn = `span ${pat.span}`;
+      card.style.aspectRatio = pat.ratio;
+      card.dataset.idx = i;
+      card.innerHTML = `
+        ${imgUrl ? `<img class="work-img" src="${imgUrl}" alt="${p.title}">` : `
+          <div class="work-placeholder">
+            <div class="work-placeholder-icon">◻</div>
+            <div class="work-placeholder-text">Image manquante</div>
+          </div>`}
+        <div class="work-overlay">
+          <div class="work-cat">${p.cat}</div>
+          <div class="work-title">${p.title}</div>
+          <div class="work-engine">${p.engine}</div>
+        </div>`;
+
+      card.addEventListener('click', () => openProjectDetail(p));
+      grid.appendChild(card);
+    });
+
+    document.querySelectorAll('.work-card').forEach(el => {
+      el.addEventListener('mouseenter', () => { cursor.classList.add('hovering'); ring.classList.add('hovering'); });
+      el.addEventListener('mouseleave', () => { cursor.classList.remove('hovering'); ring.classList.remove('hovering'); });
+    });
+  }
+
+  // ── Lightbox ──
+  let lightboxIndex = 0;
+
+  function getImageProjects() { return worksCache.projects.filter(p => p.imagePath); }
+
+  function openLightbox(projectIndex) {
+    const p = worksCache.projects[projectIndex];
+    if (!p?.imagePath) return;
+    const imageProjects = getImageProjects();
+    lightboxIndex = imageProjects.findIndex(ip => ip.id === p.id);
+    renderLightbox();
+    document.getElementById('lightbox').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function renderLightbox() {
+    const imageProjects = getImageProjects();
+    const p = imageProjects[lightboxIndex];
+    if (!p) return;
+    const img = document.getElementById('lightboxImg');
+    img.style.opacity = '0';
+    img.src = projectImageUrl(p);
+    img.onload = () => { img.style.transition = 'opacity 0.2s'; img.style.opacity = '1'; };
+    document.getElementById('lightboxTitle').textContent = p.title;
+    document.getElementById('lightboxSub').textContent = [p.cat, p.engine].filter(Boolean).join(' · ');
+    document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${imageProjects.length}`;
+    document.getElementById('lightboxPrev').disabled = lightboxIndex === 0;
+    document.getElementById('lightboxNext').disabled = lightboxIndex === imageProjects.length - 1;
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+  document.getElementById('lightbox').addEventListener('click', e => { if (e.target === document.getElementById('lightbox')) closeLightbox(); });
+  document.getElementById('lightboxPrev').addEventListener('click', () => { if (lightboxIndex > 0) { lightboxIndex--; renderLightbox(); } });
+  document.getElementById('lightboxNext').addEventListener('click', () => { if (lightboxIndex < getImageProjects().length - 1) { lightboxIndex++; renderLightbox(); } });
+
+  // ── Admin list ──
+  function renderAdminList() {
+    const list = document.getElementById('adminProjectsList');
+    const projects = worksCache.projects;
+    list.innerHTML = '';
+
+    if (!projects.length) {
+      list.innerHTML = '<div style="font-size:0.7rem;color:var(--muted);text-align:center;padding:1.5rem;">Aucun projet ajouté.</div>';
+      return;
+    }
+
+    projects.forEach((p, i) => {
+      const imgUrl = projectImageUrl(p);
+      const item = document.createElement('div');
+      item.className = 'admin-project-item';
+      item.innerHTML = `
+        ${imgUrl ? `<img class="admin-project-thumb" src="${imgUrl}" alt="${p.title}">` : `<div class="admin-project-thumb" style="display:flex;align-items:center;justify-content:center;font-size:1.2rem;opacity:0.2;">◻</div>`}
+        <div class="admin-project-info">
+          <strong>${p.title}</strong>
+          <small>${p.cat}</small>
+        </div>
+        <button class="admin-project-delete" data-index="${i}">Suppr.</button>`;
+      list.appendChild(item);
+    });
+
+    list.querySelectorAll('.admin-project-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const idx = parseInt(btn.dataset.index);
+        const p = worksCache.projects[idx];
+        if (!confirm(`Supprimer "${p.title}" ?`)) return;
+        setLoading(true, 'Suppression…');
+        try {
+          // Delete image file if it exists
+          if (p.imagePath && p.imageSha) {
+            await ghDelete(p.imagePath, p.imageSha, `chore: remove image ${p.imagePath}`);
+          }
+          worksCache.projects.splice(idx, 1);
+          await saveProjects();
+          renderWorksGrid();
+          renderAdminList();
+        } catch(e) {
+          alert('Erreur lors de la suppression : ' + e.message);
+        } finally {
+          setLoading(false);
+        }
+      });
+    });
+  }
+
+  // ── Loading state ──
+  function setLoading(on, msg = 'Chargement…') {
+    const btn = document.getElementById('addProjectBtn');
+    btn.disabled = on;
+    btn.textContent = on ? msg : 'Ajouter au portfolio →';
+  }
+
+  // ── Open / close modal & panel ──
+  const adminOverlay  = document.getElementById('adminOverlay');
+  const adminPanel    = document.getElementById('adminPanel');
+  const adminBackdrop = document.getElementById('adminBackdrop');
+  const adminBadge    = document.getElementById('adminTriggerBadge');
+
+  function openPasswordModal() {
+    if (isAdminLoggedIn()) { openAdminPanel(); return; }
+    adminOverlay.classList.add('active');
+    setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
+  }
+  function closePasswordModal() {
+    adminOverlay.classList.remove('active');
+    document.getElementById('adminPasswordInput').value = '';
+    document.getElementById('adminTokenInput').value = '';
+    document.getElementById('adminErrorMsg').classList.remove('visible');
+  }
+  async function openAdminPanel() {
+    adminPanel.classList.add('open');
+    adminBackdrop.classList.add('active');
+    // Refresh SHA for writes
+    try {
+      const file = await ghGet(WORKS_FILE);
+      worksCache.sha = file?.sha || null;
+    } catch {}
+    renderAdminList();
+  }
+  function closeAdminPanel() {
+    adminPanel.classList.remove('open');
+    adminBackdrop.classList.remove('active');
+  }
+  function logout() {
+    setAdminSession(false);
+    sessionStorage.removeItem(TOKEN_KEY);
+    adminBadge.classList.remove('visible');
+    closeAdminPanel();
+  }
+
+  document.getElementById('adminCloseModal').addEventListener('click', closePasswordModal);
+  document.getElementById('adminClosePanel').addEventListener('click', closeAdminPanel);
+  document.getElementById('adminBackdrop').addEventListener('click', closeAdminPanel);
+  document.getElementById('adminLogoutBtn').addEventListener('click', logout);
+  document.getElementById('adminTriggerBadge').addEventListener('click', openAdminPanel);
+
+  // ── Login ──
+  async function attemptLogin() {
+    const pw    = document.getElementById('adminPasswordInput').value;
+    const token = document.getElementById('adminTokenInput').value.trim();
+    const hash  = await sha256(pw);
+    const err   = document.getElementById('adminErrorMsg');
+
+    if (hash !== ADMIN_PASSWORD_HASH) {
+      const input = document.getElementById('adminPasswordInput');
+      input.classList.add('error');
+      err.textContent = 'Mot de passe incorrect.';
+      err.classList.add('visible');
+      setTimeout(() => input.classList.remove('error'), 500);
+      input.value = ''; input.focus();
+      return;
+    }
+    if (!token) {
+      const input = document.getElementById('adminTokenInput');
+      input.classList.add('error');
+      err.textContent = 'Token GitHub requis.';
+      err.classList.add('visible');
+      setTimeout(() => input.classList.remove('error'), 500);
+      input.focus();
+      return;
+    }
+
+    setToken(token);
+    setAdminSession(true);
+    closePasswordModal();
+    adminBadge.classList.add('visible');
+    // Reload with auth to get SHA
+    await loadProjects();
+    renderWorksGrid();
+    openAdminPanel();
+  }
+
+  document.getElementById('adminLoginBtn').addEventListener('click', attemptLogin);
+  document.getElementById('adminPasswordInput').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('adminTokenInput').focus(); });
+  document.getElementById('adminTokenInput').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+
+  // ── Escape / secret triggers ──
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const lb = document.getElementById('lightbox');
+      if (lb.classList.contains('active')) { closeLightbox(); return; }
+      if (adminOverlay.classList.contains('active')) { closePasswordModal(); return; }
+      if (adminPanel.classList.contains('open')) { closeAdminPanel(); return; }
+    }
+    if (e.key === 'ArrowLeft' && document.getElementById('lightbox').classList.contains('active') && lightboxIndex > 0) { lightboxIndex--; renderLightbox(); }
+    if (e.key === 'ArrowRight' && document.getElementById('lightbox').classList.contains('active') && lightboxIndex < getImageProjects().length - 1) { lightboxIndex++; renderLightbox(); }
+    if (e.ctrlKey && e.shiftKey && e.key === 'A') openPasswordModal();
+  });
+
+  let logoClicks = 0, logoTimer;
+  document.querySelector('.nav-logo').addEventListener('click', e => {
+    e.preventDefault();
+    logoClicks++;
+    clearTimeout(logoTimer);
+    logoTimer = setTimeout(() => { logoClicks = 0; }, 1500);
+    if (logoClicks >= 5) { logoClicks = 0; openPasswordModal(); }
+  });
+
+  // ── Image upload ──
+  let currentImageFile = null;
+  let currentImageData = null;
+
+  const imageInput       = document.getElementById('imageInput');
+  const uploadPreview    = document.getElementById('uploadPreview');
+  const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+  const uploadFileName   = document.getElementById('uploadFileName');
+  const uploadZone       = document.getElementById('uploadZone');
+
+  function handleImageFile(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    currentImageFile = file;
+    const reader = new FileReader();
+    reader.onload = e => {
+      currentImageData = e.target.result;
+      uploadPreview.src = currentImageData;
+      uploadPreview.classList.add('visible');
+      uploadPlaceholder.style.display = 'none';
+      uploadFileName.textContent = '✓ ' + file.name;
+      uploadFileName.classList.add('visible');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  imageInput.addEventListener('change', e => handleImageFile(e.target.files[0]));
+  uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+  uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+  uploadZone.addEventListener('drop', e => { e.preventDefault(); uploadZone.classList.remove('drag-over'); handleImageFile(e.dataTransfer.files[0]); });
+
+  // ── Add project ──
+  document.getElementById('addProjectBtn').addEventListener('click', async () => {
+    const title  = document.getElementById('projTitle').value.trim();
+    const cat    = document.getElementById('projCat').value.trim();
+    const engine = document.getElementById('projEngine').value.trim();
+
+    if (!title) { document.getElementById('projTitle').focus(); return; }
+    if (!currentImageData) { alert('Sélectionne une image.'); return; }
+
+    setLoading(true, 'Upload image…');
+
+    try {
+      // Determine file extension
+      const ext  = currentImageFile?.name.split('.').pop() || 'jpg';
+      const id   = Date.now().toString();
+      const imgPath = `${IMAGES_DIR}/${id}.${ext}`;
+      const base64  = currentImageData.split(',')[1]; // strip "data:image/...;base64,"
+
+      // 1. Upload image to repo
+      setLoading(true, 'Upload image…');
+      const imgResult = await ghPutBinary(imgPath, base64, null, `chore: add image ${id}.${ext}`);
+      const imageSha  = imgResult.content?.sha || null;
+
+      // 2. Update works.json
+      setLoading(true, 'Sauvegarde…');
+      worksCache.projects.push({ id, title, cat: cat || 'Portfolio', engine: engine || '', imagePath: imgPath, imageSha });
+      await saveProjects();
+
+      renderWorksGrid();
+      renderAdminList();
+
+      // Reset form
+      document.getElementById('projTitle').value = '';
+      document.getElementById('projCat').value = '';
+      document.getElementById('projEngine').value = '';
+      currentImageData = null; currentImageFile = null;
+      uploadPreview.src = ''; uploadPreview.classList.remove('visible');
+      uploadPlaceholder.style.display = '';
+      uploadFileName.classList.remove('visible');
+      imageInput.value = '';
+
+    } catch(e) {
+      alert('Erreur : ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // ── Init ──
+  (async () => {
+    await loadProjects();
+    renderWorksGrid();
+    if (isAdminLoggedIn()) adminBadge.classList.add('visible');
+  })();
+
+  // ── STAT MODAL ──
+  const statData = {
+    xp: {
+      label: 'Expérience',
+      title: '3<span>+</span>',
+      desc: 'Plus de <strong>3 ans</strong> en production temps réel : props, environnements, pipelines. Des projets concrets, des contraintes de production réelles, des assets directement exploitables en moteur.',
+      diagram: `<svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="20" y1="52" x2="360" y2="52" stroke="rgba(253,254,249,0.06)" stroke-width="1"/>
+        <line x1="20" y1="52" x2="270" y2="52" stroke="#5F47E7" stroke-width="1.5" class="diag-line" stroke-linecap="round"/>
+        <circle cx="20" cy="52" r="3" fill="#5F47E7" class="diag-fade diag-fade-d1"/>
+        <circle cx="110" cy="52" r="3" fill="#5F47E7" class="diag-fade diag-fade-d2"/>
+        <circle cx="200" cy="52" r="3" fill="#5F47E7" class="diag-fade diag-fade-d3"/>
+        <circle cx="270" cy="52" r="5" fill="#7B63FF" class="diag-fade diag-fade-d4" style="filter:drop-shadow(0 0 5px #7B63FF)"/>
+        <circle cx="360" cy="52" r="3" fill="none" stroke="rgba(253,254,249,0.12)" stroke-width="1" stroke-dasharray="2 2"/>
+        <text x="20" y="70" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d1">2022</text>
+        <text x="110" y="70" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d2">2023</text>
+        <text x="200" y="70" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d3">2024</text>
+        <text x="270" y="70" fill="#7B63FF" font-family="DM Mono,monospace" font-size="8" letter-spacing="1" text-anchor="middle" class="diag-fade diag-fade-d4">2025</text>
+        <text x="270" y="30" fill="#5F47E7" font-family="DM Mono,monospace" font-size="7" letter-spacing="2" text-anchor="middle" class="diag-pulse">· NOW ·</text>
+        <line x1="110" y1="52" x2="110" y2="36" stroke="rgba(95,71,231,0.35)" stroke-width="1" stroke-dasharray="2 2" class="diag-fade diag-fade-d2"/>
+        <text x="110" y="30" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="7.5" text-anchor="middle" class="diag-fade diag-fade-d2">Props</text>
+        <line x1="200" y1="52" x2="200" y2="36" stroke="rgba(95,71,231,0.35)" stroke-width="1" stroke-dasharray="2 2" class="diag-fade diag-fade-d3"/>
+        <text x="200" y="30" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="7.5" text-anchor="middle" class="diag-fade diag-fade-d3">Enviro</text>
+      </svg>`
+    },
+    ind: {
+      label: 'Clientèle',
+      title: 'Ind<span>&amp;</span>',
+      desc: "J'interviens auprès de <strong>studios indépendants</strong> et d'<strong>équipes AA</strong> — des productions qui ont besoin d'un renfort fiable, intégré directement dans le pipeline, sans friction.",
+      diagram: `<svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="190" cy="45" r="16" stroke="#5F47E7" stroke-width="1.2" class="diag-fade diag-fade-d1"/>
+        <circle cx="190" cy="45" r="11" fill="rgba(95,71,231,0.1)" class="diag-fade diag-fade-d1"/>
+        <text x="190" y="43" fill="#FDFEF9" font-family="Syne,sans-serif" font-weight="700" font-size="7" text-anchor="middle" class="diag-fade diag-fade-d1">Adrien</text>
+        <text x="190" y="52" fill="#5F47E7" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d1">3D Artist</text>
+        <line x1="174" y1="45" x2="104" y2="30" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d2" stroke-linecap="round"/>
+        <circle cx="88" cy="25" r="14" stroke="rgba(95,71,231,0.5)" stroke-width="1" fill="rgba(95,71,231,0.05)" class="diag-fade diag-fade-d2"/>
+        <text x="88" y="23" fill="rgba(253,254,249,0.7)" font-family="DM Mono,monospace" font-size="7" text-anchor="middle" class="diag-fade diag-fade-d2">Indie</text>
+        <text x="88" y="32" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d2">Studio</text>
+        <line x1="206" y1="45" x2="276" y2="30" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d3" stroke-linecap="round"/>
+        <circle cx="292" cy="25" r="14" stroke="rgba(123,99,255,0.6)" stroke-width="1" fill="rgba(123,99,255,0.07)" class="diag-fade diag-fade-d3"/>
+        <text x="292" y="23" fill="rgba(253,254,249,0.7)" font-family="DM Mono,monospace" font-size="7" text-anchor="middle" class="diag-fade diag-fade-d3">Équipe</text>
+        <text x="292" y="32" fill="#7B63FF" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d3">AA</text>
+        <line x1="190" y1="61" x2="190" y2="74" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d4" stroke-linecap="round"/>
+        <rect x="150" y="76" width="80" height="12" rx="0" stroke="rgba(95,71,231,0.3)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d4"/>
+        <text x="190" y="85" fill="rgba(253,254,249,0.4)" font-family="DM Mono,monospace" font-size="6.5" text-anchor="middle" class="diag-fade diag-fade-d4">Pipeline intégré</text>
+      </svg>`
+    },
+    pbr: {
+      label: 'Workflow Texture',
+      title: 'PBR',
+      desc: "Chaque asset passe par un <strong>pipeline PBR rigoureux</strong> : unwrap optimisé, textures cohérentes (Albedo, Normal, ORM), bake propre depuis high-poly, prêt à l'intégration immédiate en moteur.",
+      diagram: `<svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="28" width="54" height="36" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d1"/>
+        <text x="37" y="44" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="7.5" text-anchor="middle" class="diag-fade diag-fade-d1">High</text>
+        <text x="37" y="54" fill="rgba(253,254,249,0.35)" font-family="DM Mono,monospace" font-size="6.5" text-anchor="middle" class="diag-fade diag-fade-d1">Poly</text>
+        <line x1="64" y1="46" x2="80" y2="46" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d2" stroke-linecap="round"/>
+        <text x="72" y="42" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" class="diag-fade diag-fade-d2">→</text>
+        <rect x="82" y="28" width="54" height="36" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d2"/>
+        <text x="109" y="44" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="7.5" text-anchor="middle" class="diag-fade diag-fade-d2">UV</text>
+        <text x="109" y="54" fill="rgba(253,254,249,0.35)" font-family="DM Mono,monospace" font-size="6.5" text-anchor="middle" class="diag-fade diag-fade-d2">Unwrap</text>
+        <line x1="136" y1="46" x2="152" y2="46" stroke="rgba(95,71,231,0.4)" stroke-width="1" class="diag-line diag-line-d3" stroke-linecap="round"/>
+        <text x="144" y="42" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" class="diag-fade diag-fade-d3">→</text>
+        <rect x="154" y="28" width="54" height="36" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d3"/>
+        <text x="181" y="44" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="7.5" text-anchor="middle" class="diag-fade diag-fade-d3">BAKE</text>
+        <text x="181" y="54" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d3">Marmoset</text>
+        <line x1="208" y1="46" x2="224" y2="46" stroke="rgba(95,71,231,0.5)" stroke-width="1" class="diag-line diag-line-d4" stroke-linecap="round"/>
+        <text x="216" y="42" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="8" text-anchor="middle" class="diag-fade diag-fade-d4">→</text>
+        <rect x="226" y="20" width="72" height="52" rx="0" stroke="#5F47E7" stroke-width="1.5" fill="rgba(95,71,231,0.08)" class="diag-fade diag-fade-d4"/>
+        <text x="262" y="36" fill="#FDFEF9" font-family="Syne,sans-serif" font-weight="700" font-size="9" text-anchor="middle" class="diag-fade diag-fade-d4">PBR</text>
+        <text x="262" y="48" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d4">Albedo · Normal</text>
+        <text x="262" y="58" fill="rgba(253,254,249,0.5)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d4">ORM · Emissive</text>
+        <text x="262" y="66" fill="#7B63FF" font-family="DM Mono,monospace" font-size="5.5" text-anchor="middle" class="diag-fade diag-fade-d4">Substance</text>
+        <line x1="298" y1="46" x2="318" y2="46" stroke="rgba(123,99,255,0.5)" stroke-width="1" class="diag-line diag-line-d5" stroke-linecap="round"/>
+        <text x="348" y="50" fill="#7B63FF" font-family="DM Mono,monospace" font-size="7.5" text-anchor="middle" class="diag-fade diag-fade-d4">→ Moteur</text>
+      </svg>`
+    },
+    lod: {
+      label: 'Optimisation',
+      title: 'LOD<span>s</span>',
+      desc: "Chaque asset est livré avec ses <strong>niveaux de détail</strong> (LOD0 → LOD3) : polycount décroissant, textures adaptées, prêts pour les <strong>systèmes de streaming</strong> d'Unreal Engine et Unity.",
+      diagram: `<svg viewBox="0 0 380 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="10" y="15" width="60" height="60" rx="0" stroke="#5F47E7" stroke-width="1.5" fill="rgba(95,71,231,0.1)" class="diag-fade diag-fade-d1"/>
+        <polygon points="40,25 54,48 26,48" stroke="#7B63FF" stroke-width="1.2" fill="rgba(123,99,255,0.15)" class="diag-fade diag-fade-d1"/>
+        <text x="40" y="65" fill="#FDFEF9" font-family="Syne,sans-serif" font-weight="700" font-size="7" text-anchor="middle" class="diag-fade diag-fade-d1">LOD 0</text>
+        <text x="40" y="74" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d1">100%</text>
+        <text x="84" y="46" fill="rgba(95,71,231,0.5)" font-family="DM Mono,monospace" font-size="10" text-anchor="middle" class="diag-fade diag-fade-d2">›</text>
+        <rect x="96" y="22" width="48" height="48" rx="0" stroke="rgba(95,71,231,0.55)" stroke-width="1" fill="rgba(95,71,231,0.05)" class="diag-fade diag-fade-d2"/>
+        <polygon points="120,30 132,50 108,50" stroke="#5F47E7" stroke-width="1" fill="rgba(95,71,231,0.1)" class="diag-fade diag-fade-d2"/>
+        <text x="120" y="65" fill="rgba(253,254,249,0.65)" font-family="Syne,sans-serif" font-weight="700" font-size="7" text-anchor="middle" class="diag-fade diag-fade-d2">LOD 1</text>
+        <text x="120" y="74" fill="rgba(253,254,249,0.3)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d2">~50%</text>
+        <text x="158" y="46" fill="rgba(95,71,231,0.4)" font-family="DM Mono,monospace" font-size="10" text-anchor="middle" class="diag-fade diag-fade-d3">›</text>
+        <rect x="168" y="28" width="38" height="38" rx="0" stroke="rgba(95,71,231,0.35)" stroke-width="1" fill="rgba(95,71,231,0.03)" class="diag-fade diag-fade-d3"/>
+        <polygon points="187,34 197,50 177,50" stroke="rgba(95,71,231,0.6)" stroke-width="0.8" fill="rgba(95,71,231,0.06)" class="diag-fade diag-fade-d3"/>
+        <text x="187" y="65" fill="rgba(253,254,249,0.45)" font-family="Syne,sans-serif" font-weight="700" font-size="7" text-anchor="middle" class="diag-fade diag-fade-d3">LOD 2</text>
+        <text x="187" y="74" fill="rgba(253,254,249,0.25)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d3">~25%</text>
+        <text x="220" y="46" fill="rgba(95,71,231,0.3)" font-family="DM Mono,monospace" font-size="10" text-anchor="middle" class="diag-fade diag-fade-d4">›</text>
+        <rect x="228" y="34" width="28" height="28" rx="0" stroke="rgba(95,71,231,0.2)" stroke-width="1" fill="rgba(95,71,231,0.02)" class="diag-fade diag-fade-d4"/>
+        <polygon points="242,38 250,50 234,50" stroke="rgba(95,71,231,0.4)" stroke-width="0.8" fill="rgba(95,71,231,0.04)" class="diag-fade diag-fade-d4"/>
+        <text x="242" y="65" fill="rgba(253,254,249,0.28)" font-family="Syne,sans-serif" font-weight="700" font-size="7" text-anchor="middle" class="diag-fade diag-fade-d4">LOD 3</text>
+        <text x="242" y="74" fill="rgba(253,254,249,0.18)" font-family="DM Mono,monospace" font-size="6" text-anchor="middle" class="diag-fade diag-fade-d4">~10%</text>
+        <line x1="10" y1="83" x2="370" y2="83" stroke="rgba(253,254,249,0.05)" stroke-width="1"/>
+        <text x="190" y="90" fill="rgba(253,254,249,0.15)" font-family="DM Mono,monospace" font-size="6" letter-spacing="2" text-anchor="middle">DISTANCE →</text>
+      </svg>`
+    }
+  };
+
+  // ── Stat blocks — 2x2 grid with popup ──
+  const statPopup   = document.getElementById('statPopup');
+  const spLabel     = document.getElementById('spLabel');
+  const spTitle     = document.getElementById('spTitle');
+  const spDiagram   = document.getElementById('spDiagram');
+  const spDesc      = document.getElementById('spDesc');
+  const spClose     = document.getElementById('spClose');
+  let activeBlock   = null;
+
+  function openStatPopup(block) {
+    const key  = block.dataset.stat;
+    const data = statData[key];
+    if (!data) return;
+    spLabel.textContent  = data.label;
+    spTitle.innerHTML    = data.title;
+    spDiagram.innerHTML  = data.diagram;
+    spDesc.innerHTML     = data.desc;
+    statPopup.classList.add('visible');
+    block.classList.add('active');
+    activeBlock = block;
+  }
+
+  function closeStatPopup() {
+    statPopup.classList.remove('visible');
+    if (activeBlock) { activeBlock.classList.remove('active'); activeBlock = null; }
+  }
+
+  document.querySelectorAll('.stat-block[data-stat]').forEach(block => {
+    block.addEventListener('click', () => {
+      if (block === activeBlock) { closeStatPopup(); return; }
+      if (activeBlock) activeBlock.classList.remove('active');
+      openStatPopup(block);
+    });
+  });
+
+  spClose.addEventListener('click', closeStatPopup);
+  document.getElementById('statPopup').addEventListener('click', closeStatPopup);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeStatPopup(); });
+
+
+  function openLegal(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLegal(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('openCgv').addEventListener('click', e => { e.preventDefault(); openLegal('cgvOverlay'); });
+  document.getElementById('openCgu').addEventListener('click', e => { e.preventDefault(); openLegal('cguOverlay'); });
+
+  ['cgvClose','cgvCloseBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => closeLegal('cgvOverlay')));
+  ['cguClose','cguCloseBtn'].forEach(id => document.getElementById(id).addEventListener('click', () => closeLegal('cguOverlay')));
+
+  document.getElementById('cgvOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeLegal('cgvOverlay'); });
+  document.getElementById('cguOverlay').addEventListener('click', e => { if (e.target === e.currentTarget) closeLegal('cguOverlay'); });
+
+  // ── Service cards — popup (all screens, hidden via CSS on desktop) ──
+  (function() {
+    function initServicePopup() {
+      const overlay  = document.getElementById('servicePopupOverlay');
+      const spvNum   = document.getElementById('spvNum');
+      const spvName  = document.getElementById('spvName');
+      const spvDesc  = document.getElementById('spvDesc');
+      const spvList  = document.getElementById('spvList');
+      const closeBtn = document.getElementById('servicePopupClose');
+
+      if (!overlay || !closeBtn) return;
+
+      let activeServiceCard = null;
+
+      function openServicePopup(card) {
+        spvNum.textContent  = card.querySelector('.service-number')?.textContent || '';
+        spvName.innerHTML   = card.querySelector('.service-name')?.innerHTML || '';
+        spvDesc.textContent = card.querySelector('.service-desc')?.textContent || '';
+        const items = card.querySelectorAll('.service-includes li');
+        spvList.innerHTML   = Array.from(items).map(li => `<li>${li.textContent}</li>`).join('');
+        overlay.classList.add('visible');
+        document.body.style.overflow = 'hidden';
+        activeServiceCard = card;
+      }
+
+      function closeServicePopup() {
+        overlay.classList.remove('visible');
+        document.body.style.overflow = '';
+        activeServiceCard = null;
+      }
+
+      document.querySelectorAll('.service-card').forEach(card => {
+        card.addEventListener('click', () => {
+          if (window.innerWidth > 768) return;
+          if (activeServiceCard === card && overlay.classList.contains('visible')) {
+            closeServicePopup();
+          } else {
+            openServicePopup(card);
+          }
+        });
+      });
+
+      closeBtn.addEventListener('click', closeServicePopup);
+      overlay.addEventListener('click', closeServicePopup);
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeServicePopup(); });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initServicePopup);
+    } else {
+      initServicePopup();
+    }
+  })();
+
+  // Extend Escape key handler for legal modals
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (document.getElementById('cgvOverlay').classList.contains('active')) { closeLegal('cgvOverlay'); return; }
+      if (document.getElementById('cguOverlay').classList.contains('active')) { closeLegal('cguOverlay'); return; }
+      if (document.getElementById('projectDetail').classList.contains('active')) { closeProjectDetail(); return; }
+    }
+  });
+
+  // ══════════════════════════════════════════════
+  // ── LANGUAGE SWITCHER ─────────────────────────
+  // ══════════════════════════════════════════════
+  const translations = {
+    fr: {
+      'nav-about': 'About', 'nav-services': 'Services', 'nav-works': 'Works', 'nav-contact': 'Contact',
+      'nav-cta': 'Start a project',
+      'hero-tag': 'Prop & Environment Artist · Freelance',
+      'hero-sub': 'Renfort de production fiable pour studios indépendants et AA.<br>Props et environnements temps réel — optimisés, cohérents, prêts à l\'intégration.',
+      'hero-btn-works': 'Voir mes projets',
+      'hero-btn-contact': 'Discuter du projet',
+      'about-label': 'About',
+      'about-title': 'Un interlocuteur unique.<br>Une qualité constante.',
+      'about-p1': 'Je suis <strong>Adrien</strong>, artiste 3D freelance spécialisé dans la création d\'assets temps réel pour jeux vidéo. J\'interviens comme renfort de production pour studios <strong>indépendants et AA</strong> — là où chaque asset compte et où la cohérence visuelle fait la différence.',
+      'about-p2': 'Mon approche combine vision <strong>artistique et technique</strong> : je comprends les contraintes de production, je respecte les DA existantes, et je livre des assets directement exploitables en moteur.',
+      'tools-label': 'Outils & moteurs',
+      'stat-xp-desc': 'Années d\'expérience<br>en production temps réel',
+      'stat-ind-desc': 'Studios indépendants<br>& équipes AA',
+      'stat-pbr-desc': 'UV / Textures<br>Pipeline propre',
+      'stat-lod-desc': 'Assets optimisés<br>prêts moteur',
+      'services-label': 'Services',
+      'services-title': 'Ce que je produis.',
+      'services-btn': 'Discuter du projet',
+      'works-label': 'Portfolio',
+      'works-title': 'My Works.',
+      'works-btn': 'Voir ArtStation',
+      'process-label': 'Process',
+      'process-title': 'Comment je travaille.',
+      'contact-label': 'Contact',
+      'contact-title': 'Démarrons<br>un projet.',
+      'contact-desc': 'Un besoin en production d\'assets 3D ? Un sprint à renforcer ? Parlons-en. Je réponds sous 24h.',
+      'form-name': 'Nom', 'form-email': 'Email', 'form-subject': 'Sujet', 'form-message': 'Message',
+      'form-name-ph': 'Studio / Nom', 'form-email-ph': 'contact@studio.com',
+      'form-subject-ph': 'Props 3D · Sets modulaires · Sprint · Autre',
+      'form-msg-ph': 'Décrivez votre projet, vos contraintes, vos délais...',
+      'form-submit': 'Envoyer le message',
+      'calendly-note': 'Ou <a href="https://calendly.com/app/scheduling/meeting_types/user/me" target="_blank">réservez directement un créneau</a> via Calendly.',
+    },
+    en: {
+      'nav-about': 'About', 'nav-services': 'Services', 'nav-works': 'Works', 'nav-contact': 'Contact',
+      'nav-cta': 'Start a project',
+      'hero-tag': 'Prop & Environment Artist · Freelance',
+      'hero-sub': 'Reliable production support for indie and AA studios.<br>Realtime props and environments — optimized, consistent, engine-ready.',
+      'hero-btn-works': 'See my work',
+      'hero-btn-contact': 'Discuss a project',
+      'about-label': 'About',
+      'about-title': 'One point of contact.<br>Consistent quality.',
+      'about-p1': 'I\'m <strong>Adrien</strong>, a freelance 3D artist specializing in realtime game assets. I work as production support for <strong>indie and AA studios</strong> — where every asset matters and visual consistency makes the difference.',
+      'about-p2': 'My approach blends <strong>artistic and technical</strong> vision: I understand production constraints, respect existing art directions, and deliver engine-ready assets.',
+      'tools-label': 'Tools & engines',
+      'stat-xp-desc': 'Years of experience<br>in realtime production',
+      'stat-ind-desc': 'Indie studios<br>& AA teams',
+      'stat-pbr-desc': 'UV / Textures<br>Clean pipeline',
+      'stat-lod-desc': 'Optimized assets<br>engine-ready',
+      'services-label': 'Services',
+      'services-title': 'What I produce.',
+      'services-btn': 'Discuss a project',
+      'works-label': 'Portfolio',
+      'works-title': 'My Works.',
+      'works-btn': 'View ArtStation',
+      'process-label': 'Process',
+      'process-title': 'How I work.',
+      'contact-label': 'Contact',
+      'contact-title': 'Let\'s start<br>a project.',
+      'contact-desc': 'Need 3D assets? A sprint to reinforce? Let\'s talk. I reply within 24h.',
+      'form-name': 'Name', 'form-email': 'Email', 'form-subject': 'Subject', 'form-message': 'Message',
+      'form-name-ph': 'Studio / Name', 'form-email-ph': 'contact@studio.com',
+      'form-subject-ph': '3D Props · Modular sets · Sprint · Other',
+      'form-msg-ph': 'Describe your project, constraints, deadlines...',
+      'form-submit': 'Send message',
+      'calendly-note': 'Or <a href="https://calendly.com/app/scheduling/meeting_types/user/me" target="_blank">book a slot directly</a> via Calendly.',
+    }
+  };
+
+  let currentLang = localStorage.getItem('arcobel_lang') || 'fr';
+
+  function applyLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('arcobel_lang', lang);
+    const t = translations[lang];
+
+    // Nav
+    document.querySelectorAll('.nav-links a').forEach(a => {
+      const href = a.getAttribute('href').slice(1);
+      if (t['nav-' + href]) a.childNodes[0].textContent = t['nav-' + href];
+    });
+    const navCtaEl = document.querySelector('.nav-cta');
+    if (navCtaEl) navCtaEl.childNodes[0].textContent = t['nav-cta'];
+
+    // Hero
+    const heroTag = document.querySelector('.hero-tag');
+    if (heroTag) heroTag.textContent = t['hero-tag'];
+    const heroSub = document.querySelector('.hero-sub');
+    if (heroSub) heroSub.innerHTML = t['hero-sub'];
+    const heroWorks = document.querySelector('a[href="#works"].btn-primary');
+    if (heroWorks) heroWorks.innerHTML = t['hero-btn-works'] + ' <span class="btn-arrow">→</span>';
+    const heroContact = document.querySelector('a[href="#contact"].btn-ghost');
+    if (heroContact) heroContact.innerHTML = t['hero-btn-contact'] + ' <span class="btn-arrow">→</span>';
+
+    // About
+    const aboutLabel = document.querySelector('#about .section-label');
+    if (aboutLabel) aboutLabel.textContent = t['about-label'];
+    const aboutTitle = document.querySelector('#about .section-title');
+    if (aboutTitle) aboutTitle.innerHTML = t['about-title'];
+    const aboutPs = document.querySelectorAll('#about .about-text p');
+    if (aboutPs[0]) aboutPs[0].innerHTML = t['about-p1'];
+    if (aboutPs[1]) aboutPs[1].innerHTML = t['about-p2'];
+    const toolsLabel = document.querySelector('.tools-label');
+    if (toolsLabel) toolsLabel.textContent = t['tools-label'];
+    // Stat descs
+    const statBlocks = document.querySelectorAll('.stat-block');
+    const statKeys = ['xp','ind','pbr','lod'];
+    statBlocks.forEach((b,i) => {
+      const desc = b.querySelector('.stat-desc');
+      if (desc && t['stat-' + statKeys[i] + '-desc']) desc.innerHTML = t['stat-' + statKeys[i] + '-desc'];
+    });
+
+    // Services
+    const servLabel = document.querySelector('#services .section-label');
+    if (servLabel) servLabel.textContent = t['services-label'];
+    const servTitle = document.querySelector('#services .section-title');
+    if (servTitle) servTitle.textContent = t['services-title'];
+    const servBtn = document.querySelector('.services-header .btn-ghost');
+    if (servBtn) servBtn.innerHTML = t['services-btn'] + ' <span class="btn-arrow">→</span>';
+
+    // Works
+    const worksLabel = document.querySelector('#works .section-label');
+    if (worksLabel) worksLabel.textContent = t['works-label'];
+    const worksTitle = document.querySelector('#works .section-title');
+    if (worksTitle) worksTitle.textContent = t['works-title'];
+    const worksBtn = document.querySelector('.works-header .btn-ghost');
+    if (worksBtn) worksBtn.textContent = t['works-btn'] + ' →';
+
+    // Process
+    const procLabel = document.querySelector('#process .section-label');
+    if (procLabel) procLabel.textContent = t['process-label'];
+    const procTitle = document.querySelector('#process .section-title');
+    if (procTitle) procTitle.textContent = t['process-title'];
+
+    // Contact
+    const contLabel = document.querySelector('#contact .section-label');
+    if (contLabel) contLabel.textContent = t['contact-label'];
+    const contTitle = document.querySelector('#contact .section-title');
+    if (contTitle) contTitle.innerHTML = t['contact-title'];
+    const contDesc = document.querySelector('.contact-info p');
+    if (contDesc) contDesc.textContent = t['contact-desc'];
+    const formLabels = document.querySelectorAll('.form-label');
+    const formLabelKeys = ['form-name','form-email','form-subject','form-message'];
+    formLabels.forEach((l,i) => { if (t[formLabelKeys[i]]) l.textContent = t[formLabelKeys[i]]; });
+    const formInputs = document.querySelectorAll('.form-input');
+    const formPhKeys = ['form-name-ph','form-email-ph','form-subject-ph'];
+    formInputs.forEach((inp,i) => { if (t[formPhKeys[i]]) inp.placeholder = t[formPhKeys[i]]; });
+    const formTextarea = document.querySelector('.form-textarea');
+    if (formTextarea) formTextarea.placeholder = t['form-msg-ph'];
+    const formSubmit = document.querySelector('.form-submit');
+    if (formSubmit && !formSubmit.disabled) formSubmit.innerHTML = t['form-submit'] + ' <span class="btn-arrow">→</span>';
+    const calendlyNote = document.querySelector('.calendly-note');
+    if (calendlyNote) calendlyNote.innerHTML = t['calendly-note'];
+
+    // Update switcher UI
+    document.querySelectorAll('.lang-opt').forEach(o => {
+      o.classList.toggle('active', o.dataset.lang === lang);
+    });
+
+    // Update html lang attr
+    document.documentElement.lang = lang;
+  }
+
+  // Lang switcher click
+  document.getElementById('langSwitcher').addEventListener('click', () => {
+    applyLang(currentLang === 'fr' ? 'en' : 'fr');
+  });
+
+  // Apply on load
+  applyLang(currentLang);
+
+  // ══════════════════════════════════════════════
+  // ── PROJECT DETAIL (split screen) ─────────────
+  // ══════════════════════════════════════════════
+  function openProjectDetail(project) {
+    const panel = document.getElementById('projectDetail');
+
+    // Image
+    const imgEl = document.getElementById('pdImg');
+    const imgPlaceholder = document.getElementById('pdImgPlaceholder');
+    if (project.image) {
+      imgEl.src = project.image;
+      imgEl.style.display = 'block';
+      imgPlaceholder.style.display = 'none';
+    } else {
+      imgEl.style.display = 'none';
+      imgPlaceholder.style.display = 'flex';
+    }
+
+    // Meta
+    document.getElementById('pdCat').textContent = project.cat || '';
+    document.getElementById('pdTitle').textContent = project.title || '';
+    document.getElementById('pdEngine').textContent = project.engine || '';
+    document.getElementById('pdDesc').textContent = project.desc || (currentLang === 'fr' ? 'Description du projet à venir.' : 'Project description coming soon.');
+
+    // Specs
+    document.getElementById('pdSpecCat').textContent = project.cat || '—';
+    document.getElementById('pdSpecEngine').textContent = project.engine || '—';
+    document.getElementById('pdSpecType').textContent = project.type || 'Props / Environment';
+    document.getElementById('pdSpecPipeline').textContent = project.pipeline || 'PBR · LODs · UV';
+
+    // Tags
+    const tags = (project.tags || ['Realtime', 'PBR', 'Hard Surface']).slice(0, 6);
+    document.getElementById('pdTags').innerHTML = tags.map(t => `<span class="project-detail-tag">${t}</span>`).join('');
+
+    panel.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeProjectDetail() {
+    document.getElementById('projectDetail').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('pdClose').addEventListener('click', closeProjectDetail);
+  document.getElementById('pdBack').addEventListener('click', closeProjectDetail);
+  document.getElementById('projectDetail').addEventListener('click', e => {
+    if (e.target === e.currentTarget) closeProjectDetail();
+  });
+
+  // Override work card click to open detail instead of lightbox
+  // (injected after renderWorksGrid — we delegate on the grid)
+  document.getElementById('worksGrid').addEventListener('click', e => {
+    const card = e.target.closest('.work-card');
+    if (!card) return;
+    const idx = parseInt(card.dataset.idx);
+    if (isNaN(idx) || !worksCache.projects[idx]) return;
+    e.stopPropagation();
+    openProjectDetail(worksCache.projects[idx]);
+  });
+
+  // ── Mobile: disable magnetic effects ──
+  const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+  if (!isMobile()) {
+    document.querySelectorAll('.btn-primary, .btn-ghost, .nav-cta').forEach(btn => {
+      btn.addEventListener('mousemove', e => {
+        const r = btn.getBoundingClientRect();
+        const mx = (e.clientX - r.left - r.width/2) / r.width;
+        const my = (e.clientY - r.top - r.height/2) / r.height;
+        btn.style.transform = `translate(${mx*7}px, ${my*4 - 2}px)`;
+      });
+      btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
+    });
+  }
+
+</script>
+
+<!-- PROJECT DETAIL PANEL -->
+<div class="project-detail" id="projectDetail">
+  <div class="project-detail-left">
+    <img class="project-detail-img" id="pdImg" src="" alt="">
+    <div class="project-detail-img-placeholder" id="pdImgPlaceholder">
+      <span>◻</span>
+      <span>No image</span>
+    </div>
+  </div>
+  <div class="project-detail-right">
+    <button class="project-detail-close" id="pdClose">✕</button>
+    <button class="project-detail-back" id="pdBack">← Back to works</button>
+    <div class="project-detail-cat" id="pdCat"></div>
+    <div class="project-detail-title" id="pdTitle"></div>
+    <div class="project-detail-engine" id="pdEngine"></div>
+    <div class="project-detail-section-label">Description</div>
+    <p class="project-detail-desc" id="pdDesc"></p>
+    <div class="project-detail-section-label">Specs</div>
+    <div class="project-detail-specs">
+      <div class="project-detail-spec">
+        <div class="project-detail-spec-label">Catégorie</div>
+        <div class="project-detail-spec-val" id="pdSpecCat"></div>
+      </div>
+      <div class="project-detail-spec">
+        <div class="project-detail-spec-label">Moteur</div>
+        <div class="project-detail-spec-val" id="pdSpecEngine"></div>
+      </div>
+      <div class="project-detail-spec">
+        <div class="project-detail-spec-label">Type</div>
+        <div class="project-detail-spec-val" id="pdSpecType"></div>
+      </div>
+      <div class="project-detail-spec">
+        <div class="project-detail-spec-label">Pipeline</div>
+        <div class="project-detail-spec-val" id="pdSpecPipeline"></div>
+      </div>
+    </div>
+    <div class="project-detail-section-label">Tags</div>
+    <div class="project-detail-tags" id="pdTags"></div>
+    <a href="https://www.artstation.com/adrien_corbeille" target="_blank" class="project-detail-artstation">
+      Voir sur ArtStation →
+    </a>
+  </div>
+</div>
+
+  <!-- Service mobile popup -->
+  <div class="service-popup-overlay" id="servicePopupOverlay">
+    <div class="service-popup-sheet" id="servicePopupSheet">
+      <div class="service-popup-top">
+        <div>
+          <div class="service-popup-num" id="spvNum"></div>
+          <div class="service-popup-name" id="spvName"></div>
+        </div>
+        <button class="service-popup-close" id="servicePopupClose">✕</button>
+      </div>
+      <p class="service-popup-desc" id="spvDesc"></p>
+      <ul class="service-popup-list" id="spvList"></ul>
+      <a href="#contact" class="service-popup-cta">Discuter du projet →</a>
+    </div>
+  </div>
