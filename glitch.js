@@ -111,6 +111,12 @@
   const GLYPHS = '!@#%^&*<>?|[]~±×ΔΩΨλξ01';
 
   function corruptEl(el) {
+    // Safety: si le texte visible a déjà des glyphs, skip
+    const walker0 = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let n0; while (n0 = walker0.nextNode()) {
+      if (!n0._origText) n0._origText = n0.textContent;
+      else n0.textContent = n0._origText; // restaurer avant de recorrompre
+    }
     const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
     const textNodes = [];
     let node;
@@ -120,7 +126,8 @@
     if (!textNodes.length) return;
 
     const tNode = textNodes[Math.floor(Math.random() * textNodes.length)];
-    const orig  = tNode.textContent;
+    const orig = tNode._origText || tNode.textContent;
+    if (!tNode._origText) tNode._origText = orig;
     const len   = orig.length;
     if (len < 2) return;
 
@@ -145,7 +152,7 @@
       frame++;
       if (frame > total) {
         clearInterval(iv);
-        tNode.textContent = orig;
+        tNode.textContent = tNode._origText;
       }
     }, 40);
   }
