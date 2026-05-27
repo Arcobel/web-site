@@ -61,6 +61,7 @@
   .stat-block:hover .spotlight-layer,
   .process-step:hover .spotlight-layer { opacity: 1; }
 
+  .service-card {
     transition: box-shadow 0.35s ease, background 0.3s ease;
   }
   .service-card:hover {
@@ -852,21 +853,85 @@
   .project-detail-artstation { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 2.5rem; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); text-decoration: none; border: 1px solid rgba(95,71,231,0.3); padding: 0.75rem 1.5rem; transition: all 0.25s; position: relative; overflow: hidden; }
   .project-detail-artstation:hover { background: rgba(95,71,231,0.1); border-color: var(--accent); gap: 0.9rem; }
 
+  /* ── BURGER MENU ── */
+  .nav-burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 2rem;
+    height: 2rem;
+    background: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    padding: 0.4rem 0.45rem;
+    transition: border-color 0.25s;
+    flex-shrink: 0;
+  }
+  .nav-burger:hover { border-color: rgba(95,71,231,0.5); }
+  .nav-burger span {
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: var(--fg);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+    transform-origin: center;
+  }
+  .nav-burger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+  .nav-burger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+  .nav-burger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+  .nav-mobile-menu {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    background: rgba(14,14,14,0.97);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    z-index: 99;
+    padding: 5rem 2rem 2rem;
+    transform: translateY(-100%);
+    transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  .nav-mobile-menu.open {
+    transform: translateY(0);
+  }
+  .nav-mobile-menu ul { list-style: none; display: flex; flex-direction: column; gap: 0; }
+  .nav-mobile-link {
+    display: block;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--fg);
+    text-decoration: none;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .nav-mobile-link:hover { color: var(--accent); }
+
   /* ── MOBILE RESPONSIVE ── */
   @media (max-width: 768px) {
     .cursor, .cursor-ring { display: none !important; }
     body { cursor: auto; }
     *, *::before, *::after { cursor: auto !important; }
 
-    nav { padding: 0.9rem 1.2rem; grid-template-columns: 1fr auto 1fr; gap: 0; }
+    nav { padding: 0.9rem 1.2rem; display: flex; align-items: center; justify-content: space-between; gap: 0; }
     .nav-links { display: none; }
-    .nav-logo { grid-column: 1; }
-    .nav-right { grid-column: 3; justify-content: flex-end; gap: 0.7rem; }
-    .lang-switcher { position: absolute; left: 50%; transform: translateX(-50%); font-size: 0.62rem; }
-    .nav-cta { font-size: 0.62rem; padding: 0.5rem 0.85rem; letter-spacing: 0.1em; }
+    .nav-logo { flex: 0 0 auto; }
+    .nav-right { flex: 0 0 auto; gap: 0.6rem; }
+    .lang-switcher { position: static; transform: none; font-size: 0.62rem; margin-right: 0.4rem; }
+    .nav-cta { display: none; }
+    .nav-burger { display: flex; }
+    .nav-mobile-menu { display: block; }
 
     #hero { min-height: 100vh; padding: 5rem 1.4rem 3rem; overflow: visible; }
-    .hero-title { font-size: clamp(2.8rem, 13.5vw, 5.5rem); line-height: 0.97; margin-bottom: 1.4rem; word-break: keep-all; }
+    #hero-3d-mount, #hero-3d-hud { display: none !important; }
+    .hero-bg-grid { display: none; }
+    .hero-glow, .hero-glow-2 { width: 300px; height: 300px; animation: none; }
+    .hero-title { font-size: clamp(2.8rem, 13.5vw, 5.5rem); line-height: 0.97; margin-bottom: 1.4rem; word-break: normal; overflow-wrap: break-word; }
     .hero-sub { font-size: 0.78rem; line-height: 1.7; margin-bottom: 2rem; }
     .hero-actions { flex-direction: column; align-items: stretch; gap: 0.7rem; }
     .btn-primary, .btn-ghost { width: 100%; justify-content: center; padding: 1rem; }
@@ -882,7 +947,7 @@
     .services-header { flex-direction: column; align-items: flex-start; gap: 1.5rem; }
     .services-grid { grid-template-columns: 1fr 1fr; gap: 1.5px; }
     .service-card { padding: 1.4rem 1rem 1.6rem; cursor: pointer; }
-    .service-card.mobile-active { background: rgba(95,71,231,0.07); }
+    .service-card.mobile-active { background: rgba(95,71,231,0.07); grid-column: 1 / -1; }
     .service-card.mobile-active::before { transform: scaleX(1); }
     .service-number { margin-bottom: 0.8rem; font-size: 0.58rem; }
     .service-icon { width: 28px; height: 28px; margin-bottom: 0.8rem; }
@@ -913,7 +978,8 @@
     .works-header { flex-direction: column; align-items: flex-start; gap: 1.2rem; }
     .works-header > div { align-self: flex-start; text-align: left; width: 100%; }
     .works-grid { grid-template-columns: 1fr !important; }
-    .work-card { grid-column: span 1 !important; aspect-ratio: 16/9 !important; }
+    .work-card { grid-column: span 1 !important; aspect-ratio: 16/9 !important; transform: none !important; }
+    .work-card:hover { transform: none !important; box-shadow: none; }
     .work-overlay { transform: translateY(0) !important; background: linear-gradient(to top, rgba(14,14,14,0.98) 0%, transparent 80%); }
 
     .process-steps { display: flex; flex-direction: column; gap: 0; margin-top: 2.5rem; position: relative; }
@@ -934,7 +1000,7 @@
     .footer-links { flex-wrap: wrap; justify-content: center; gap: 1rem; }
     .footer-legal { flex-direction: row; gap: 1.2rem; align-items: center; justify-content: center; }
     .footer-legal-sep { display: none; }
-    .form-submit { display: block; margin: 0 auto; }
+    .form-submit { display: flex; width: 100%; justify-content: center; margin: 0; align-self: stretch; }
     .calendly-note { text-align: center; }
 
     .project-detail { flex-direction: column; overflow-y: auto; }
@@ -997,8 +1063,19 @@
       <span class="lang-opt" data-lang="en">EN</span>
     </button>
     <a href="#contact" class="nav-cta">Start a project</a>
+    <button class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </div>
 </nav>
+<div class="nav-mobile-menu" id="navMobileMenu">
+  <ul>
+    <li><a href="#about" class="nav-mobile-link">About</a></li>
+    <li><a href="#services" class="nav-mobile-link">Services</a></li>
+    <li><a href="#works" class="nav-mobile-link">Works</a></li>
+    <li><a href="#contact" class="nav-mobile-link">Contact</a></li>
+  </ul>
+</div>
 
 <section id="hero">
   <div class="hero-bg-grid"></div>
@@ -2874,6 +2951,41 @@
   }
   checkMobile();
   window.addEventListener('resize', checkMobile);
+})();
+</script>
+<script>
+/* ── BURGER MENU ── */
+(function() {
+  const burger = document.getElementById('navBurger');
+  const menu = document.getElementById('navMobileMenu');
+  if (!burger || !menu) return;
+
+  burger.addEventListener('click', () => {
+    const open = burger.classList.toggle('open');
+    menu.classList.toggle('open', open);
+    burger.setAttribute('aria-expanded', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+
+  // Close on link click
+  menu.querySelectorAll('.nav-mobile-link').forEach(link => {
+    link.addEventListener('click', () => {
+      burger.classList.remove('open');
+      menu.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    });
+  });
+
+  // Close on resize back to desktop
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 768) {
+      burger.classList.remove('open');
+      menu.classList.remove('open');
+      burger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+  });
 })();
 </script>
 <script src="glitch.js"></script>
