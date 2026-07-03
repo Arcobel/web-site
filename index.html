@@ -853,68 +853,17 @@
   .project-detail-artstation:hover { background: rgba(95,71,231,0.1); border-color: var(--accent); gap: 0.9rem; }
 
   /* ── MOBILE RESPONSIVE ── */
-  /* ── BURGER ── */
-  .nav-burger {
-    display: none;
-    position: relative;
-    width: 44px; height: 44px;
-    background: none; border: none;
-    cursor: pointer; flex-shrink: 0; padding: 0;
-  }
-  .nav-burger span {
-    position: absolute;
-    left: 11px; width: 22px; height: 1.5px;
-    background: var(--fg);
-    transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.18s ease;
-  }
-  .nav-burger span:nth-child(1) { top: 14px; }
-  .nav-burger span:nth-child(2) { top: 21px; }
-  .nav-burger span:nth-child(3) { top: 28px; }
-  .nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-  .nav-burger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
-  .nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
-
-  /* ── DROPDOWN ── */
-  .nav-dropdown {
-    display: none;
-    position: fixed;
-    left: 0; right: 0;
-    z-index: 150;
-    flex-direction: column;
-    background: rgba(14,14,14,0.98);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-bottom: 1px solid var(--border);
-    padding: 0.8rem 1.6rem 1.4rem;
-  }
-  .nav-dropdown.open { display: flex; }
-  .nav-dd-link {
-    display: block;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 1.35rem;
-    color: var(--muted);
-    text-decoration: none;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-    letter-spacing: 0.01em;
-  }
-  .nav-dd-link:last-child { border-bottom: none; }
-  .nav-dd-link:active { color: var(--fg); }
-
   @media (max-width: 768px) {
     .cursor, .cursor-ring { display: none !important; }
     body { cursor: auto; }
     *, *::before, *::after { cursor: auto !important; }
 
-    body { overflow-x: hidden; }
     nav { padding: 0.9rem 1.2rem; grid-template-columns: 1fr auto 1fr; gap: 0; }
     .nav-links { display: none; }
     .nav-logo { grid-column: 1; }
     .nav-right { grid-column: 3; justify-content: flex-end; gap: 0.7rem; }
     .lang-switcher { position: absolute; left: 50%; transform: translateX(-50%); font-size: 0.62rem; }
-    .nav-cta { display: none; }
-    .nav-burger { display: flex; }
+    .nav-cta { font-size: 0.62rem; padding: 0.5rem 0.85rem; letter-spacing: 0.1em; }
 
     #hero { min-height: 100vh; padding: 5rem 1.4rem 3rem; overflow: visible; }
     .hero-title { font-size: clamp(2.8rem, 13.5vw, 5.5rem); line-height: 0.97; margin-bottom: 1.4rem; word-break: keep-all; }
@@ -977,9 +926,6 @@
     .step-desc { grid-column: 2; grid-row: 2; font-size: 0.72rem; line-height: 1.65; }
     .process-step::after { display: none; }
     .process-steps:has(.process-step:hover) .process-step { opacity: 1 !important; filter: none !important; }
-    /* Fix hover collant Android */
-    .process-step:hover { background: none !important; box-shadow: none !important; border-radius: 0 !important; }
-    .process-step:hover .step-num { border-color: var(--border) !important; background: var(--bg) !important; box-shadow: none !important; }
 
     .contact-inner { grid-template-columns: 1fr; gap: 3rem; }
     .form-row { grid-template-columns: 1fr; }
@@ -1051,17 +997,8 @@
       <span class="lang-opt" data-lang="en">EN</span>
     </button>
     <a href="#contact" class="nav-cta">Start a project</a>
-    <button class="nav-burger" id="navBurger" aria-label="Menu" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
   </div>
 </nav>
-<div class="nav-dropdown" id="navDropdown">
-  <a href="#about"    class="nav-dd-link">About</a>
-  <a href="#services" class="nav-dd-link">Services</a>
-  <a href="#works"    class="nav-dd-link">Works</a>
-  <a href="#contact"  class="nav-dd-link">Contact</a>
-</div>
 
 <section id="hero">
   <div class="hero-bg-grid"></div>
@@ -2937,30 +2874,6 @@
   }
   checkMobile();
   window.addEventListener('resize', checkMobile);
-})();
-</script>
-<script>
-(function() {
-  var burger   = document.getElementById('navBurger');
-  var dropdown = document.getElementById('navDropdown');
-  var nav      = document.getElementById('navbar');
-  if (!burger || !dropdown) return;
-  function close() {
-    burger.classList.remove('open');
-    dropdown.classList.remove('open');
-    burger.setAttribute('aria-expanded', 'false');
-  }
-  function open() {
-    dropdown.style.top = nav.offsetHeight + 'px';
-    burger.classList.add('open');
-    dropdown.classList.add('open');
-    burger.setAttribute('aria-expanded', 'true');
-  }
-  burger.addEventListener('click', function() {
-    burger.classList.contains('open') ? close() : open();
-  });
-  dropdown.querySelectorAll('.nav-dd-link').forEach(function(l) { l.addEventListener('click', close); });
-  window.addEventListener('resize', function() { if (window.innerWidth > 768) close(); });
 })();
 </script>
 <script src="glitch.js"></script>
