@@ -2834,7 +2834,14 @@
   (function () {
     const burger = document.getElementById('navBurger');
     const menu   = document.getElementById('navMobileMenu');
-    if (!burger || !menu) return;
+    const navbar = document.getElementById('navbar');
+    if (!burger || !menu || !navbar) return;
+
+    function syncMenuTop() {
+      // Aligne pile sous le nav, peu importe sa hauteur
+      menu.style.top = navbar.offsetHeight + 'px';
+      menu.style.maxHeight = 'calc(100vh - ' + navbar.offsetHeight + 'px)';
+    }
 
     function closeMenu() {
       burger.classList.remove('active');
@@ -2844,6 +2851,7 @@
       document.body.style.overflow = '';
     }
     function openMenu() {
+      syncMenuTop();
       burger.classList.add('active');
       menu.classList.add('active');
       burger.setAttribute('aria-expanded', 'true');
@@ -2863,6 +2871,11 @@
     // Fermer avec ESC
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' && burger.classList.contains('active')) closeMenu();
+    });
+
+    // Recalculer la position si on rotate / resize
+    window.addEventListener('resize', () => {
+      if (burger.classList.contains('active')) syncMenuTop();
     });
 
     // Sync lang switcher mobile avec le principal
